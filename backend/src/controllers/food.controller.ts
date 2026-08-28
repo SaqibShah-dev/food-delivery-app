@@ -14,7 +14,7 @@ export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { name, description, price, category } = (req.body ?? {}) as {
     name: string;
     description: string;
-    price: number;
+    price: string | number;
     category: string;
   };
 
@@ -26,18 +26,30 @@ export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
     throw err;
   }
 
-  const image = req.file ? `/uploads/${req.file.filename}` : '';
+  if (!req.file) {
+    const err: any = new Error('Food image is required');
+    err.status = 400;
+    throw err;
+  }
+
+  const numericPrice = Number(price);
+
+  if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+    const err: any = new Error('Price must be a number greater than 0');
+    err.status = 400;
+    throw err;
+  }
 
   const item = await foodService.create({
-    name,
-    description,
-    price,
-    category,
-    image,
+    name: name.trim(),
+    description: description.trim(),
+    price: numericPrice,
+    category: category.trim(),
+    image: `/uploads/${req.file.filename}`,
     isAvailable: true,
   });
 
-  res.status(201).json(apiResponse(item, 'Food item created'));
+  res.status(201).json(apiResponse(item, 'Food item created', 201));
 });
 
 export const update = asyncHandler(async (req: AuthRequest, res: Response) => {
