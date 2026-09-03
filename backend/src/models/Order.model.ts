@@ -1,7 +1,11 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 import { IOrder } from '../types/index.js';
 
-export interface IOrderDoc extends Document, Omit<IOrder, '_id'> {}
+export interface IOrderDoc
+  extends Document,
+    Omit<IOrder, '_id' | 'user'> {
+  user: Types.ObjectId;
+}
 
 const orderItemSchema = new Schema(
   {

@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import FoodItem from '../models/FoodItem.model.js';
 import Order from '../models/Order.model.js';
 import { IAddress, IOrderItem } from '../types/index.js';
@@ -20,6 +21,17 @@ export const orderService = {
     }
 
     const foodIds = requestedItems.map((item) => item.foodId);
+
+    if (
+      foodIds.some(
+        (foodId) =>
+          typeof foodId !== 'string' || !Types.ObjectId.isValid(foodId)
+      )
+    ) {
+      const err: any = new Error('Every foodId must be a valid food item ID');
+      err.status = 400;
+      throw err;
+    }
 
     const foodItems = await FoodItem.find({
       _id: { $in: foodIds },
