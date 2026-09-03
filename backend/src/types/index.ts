@@ -20,9 +20,29 @@ export interface IFoodItem {
   updatedAt?: Date;
 }
 
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'out-for-delivery'
+  | 'delivered'
+  | 'cancelled';
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+
 export interface IOrderItem {
-  food: string; 
+  food: string;
   quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface IAddress {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  country: string;
 }
 
 export interface IOrder {
@@ -30,20 +50,10 @@ export interface IOrder {
   user: string;
   items: IOrderItem[];
   totalAmount: number;
-  status:
-    | 'pending'
-    | 'confirmed'
-    | 'preparing'
-    | 'out-for-delivery'
-    | 'delivered';
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
   paymentId?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-    country?: string;
-  };
+  address: IAddress;
   createdAt?: Date;
   updatedAt?: Date;
 }
