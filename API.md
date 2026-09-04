@@ -1,39 +1,38 @@
 # API Documentation
 
-Complete reference for all API endpoints in the Food Delivery App.
+This document covers the endpoints implemented in the current backend.
 
 ---
 
 ## Base URL
-```
+
+```text
 http://localhost:5000/api
 ```
 
-## Authentication
+The app also exposes a root health endpoint at:
 
-All protected endpoints require a JWT token in the Authorization header:
-```
-Authorization: Bearer <your_jwt_token>
+```text
+http://localhost:5000/
 ```
 
 ---
 
-## Response Format
+## Response format
 
-### Success Response
+The backend returns a consistent `apiResponse` envelope:
+
 ```json
 {
   "statusCode": 200,
-  "data": {
-    "id": "...",
-    "name": "..."
-  },
+  "data": {},
   "message": "Operation successful",
   "success": true
 }
 ```
 
-### Error Response
+Error responses are passed through the global error middleware and usually include:
+
 ```json
 {
   "statusCode": 400,
@@ -45,219 +44,337 @@ Authorization: Bearer <your_jwt_token>
 
 ---
 
-## Authentication Endpoints
+## Authentication
 
-### Register User
-**POST** `/auth/register`
+Protected endpoints require a Bearer token in the `Authorization` header:
 
-Creates a new user account.
+```http
+Authorization: Bearer <jwt_token>
+```
 
-**Request Body:**
+---
+
+## Auth endpoints
+
+### Register a new user
+
+**Endpoint**: `POST /auth/register`
+
+**Body**:
+
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
+  "name": "Jane Doe",
+  "email": "jane@example.com",
   "password": "securePassword123",
-  "phone": "+1234567890"
+  "role": "user"
 }
 ```
 
-**Response:** `201 Created`
+**Example response**:
+
 ```json
 {
   "statusCode": 201,
   "data": {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "user",
-    "createdAt": "2024-01-15T10:30:00Z"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64c0e1f4d3a5bc0425d1f3b1",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "role": "user"
+    }
   },
-  "message": "User registered successfully",
+  "message": "User registered",
   "success": true
 }
 ```
 
-**Error Cases:**
-- `400` - Email already exists
-- `400` - Invalid email format
-- `400` - Password too weak
+**Errors**:
+- `400` if the email already exists
+- `401` or `400` depending on validation failures
 
----
+### Login
 
-### Login User
-**POST** `/auth/login`
+**Endpoint**: `POST /auth/login`
 
-Authenticates user and returns JWT token.
+**Body**:
 
-**Request Body:**
 ```json
 {
-  "email": "john@example.com",
+  "email": "jane@example.com",
   "password": "securePassword123"
 }
 ```
 
-**Response:** `200 OK`
+**Example response**:
+
 ```json
 {
   "statusCode": 200,
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
-      "id": "507f1f77bcf86cd799439011",
-      "name": "John Doe",
-      "email": "john@example.com",
+      "id": "64c0e1f4d3a5bc0425d1f3b1",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
       "role": "user"
     }
   },
-  "message": "Login successful",
+  "message": "User logged in",
   "success": true
 }
 ```
 
-**Error Cases:**
-- `401` - Invalid credentials
-- `404` - User not found
+**Errors**:
+- `401` for invalid credentials
 
 ---
 
-### Get User Profile
-**GET** `/auth/profile`
+## Food endpoints
 
-Retrieves authenticated user's profile information.
+### Get all available food items
 
-**Authentication:** Required ✓
+**Endpoint**: `GET /food`
 
-**Response:** `200 OK`
-```json
-{
-  "statusCode": 200,
-  "data": {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "phone": "+1234567890",
-    "role": "user",
-    "profileImage": "https://...",
-    "address": "123 Main St, City",
-    "createdAt": "2024-01-15T10:30:00Z"
-  },
-  "message": "Profile retrieved successfully",
-  "success": true
-}
-```
+**Authentication**: not required
 
-**Error Cases:**
-- `401` - Unauthorized (missing token)
-- `401` - Invalid token
+**Example response**:
 
----
-
-### Logout User
-**POST** `/auth/logout`
-
-Logs out the authenticated user.
-
-**Authentication:** Required ✓
-
-**Response:** `200 OK`
-```json
-{
-  "statusCode": 200,
-  "data": null,
-  "message": "Logged out successfully",
-  "success": true
-}
-```
-
----
-
-## Food Endpoints
-
-### Get All Food Items
-**GET** `/food`
-
-Retrieves all available food items with optional filtering.
-
-**Query Parameters:**
-- `category` (optional) - Filter by category (string)
-- `search` (optional) - Search by name/description (string)
-- `page` (optional) - Page number for pagination (default: 1)
-- `limit` (optional) - Items per page (default: 20)
-- `sort` (optional) - Sort field: name, price, rating (default: createdAt)
-- `order` (optional) - Sort order: asc, desc (default: desc)
-
-**Example Request:**
-```
-GET /food?category=pizza&page=1&limit=10&sort=price&order=asc
-```
-
-**Response:** `200 OK`
 ```json
 {
   "statusCode": 200,
   "data": [
     {
-      "id": "507f1f77bcf86cd799439011",
+      "_id": "64c0e1f4d3a5bc0425d1f3b1",
       "name": "Margherita Pizza",
-      "description": "Classic pizza with tomato and mozzarella",
-      "price": 12.99,
+      "description": "Classic pizza with mozzarella",
+      "price": 14.99,
       "category": "pizza",
-      "image": "https://...",
-      "rating": 4.5,
+      "image": "/uploads/abc123.png",
       "isAvailable": true,
-      "createdAt": "2024-01-10T08:00:00Z"
+      "createdAt": "2026-09-04T10:00:00.000Z",
+      "updatedAt": "2026-09-04T10:00:00.000Z"
     }
   ],
-  "message": "Food items retrieved successfully",
+  "message": "Success",
   "success": true
 }
 ```
 
-**Error Cases:**
-- `400` - Invalid query parameters
+### Create a food item
 
----
+**Endpoint**: `POST /food`
 
-### Get Food Item by ID
-**GET** `/food/:id`
+**Authentication**: required, admin only
 
-Retrieves details of a specific food item.
+**Body**: multipart form-data
 
-**Path Parameters:**
-- `id` - MongoDB ObjectId (string)
+```text
+name: "Margherita Pizza"
+description: "Classic pizza with mozzarella"
+price: 14.99
+category: "pizza"
+image: <file>
+```
 
-**Response:** `200 OK`
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b1",
+    "name": "Margherita Pizza",
+    "description": "Classic pizza with mozzarella",
+    "price": 14.99,
+    "category": "pizza",
+    "image": "/uploads/abc123.png",
+    "isAvailable": true
+  },
+  "message": "Food item created",
+  "success": true
+}
+```
+
+**Errors**:
+- `400` if required fields are missing
+- `400` if an image is not uploaded
+- `403` if the user is not an admin
+
+### Update a food item
+
+**Endpoint**: `PUT /food/:id`
+
+**Authentication**: required, admin only
+
+**Body**: multipart form-data, optional fields as needed
+
+```text
+name: "Updated Pizza"
+price: 15.99
+isAvailable: true
+image: <file>
+```
+
+**Example response**:
+
 ```json
 {
   "statusCode": 200,
   "data": {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "Margherita Pizza",
-    "description": "Classic pizza with tomato and mozzarella",
-    "price": 12.99,
-    "category": "pizza",
-    "image": "https://...",
-    "rating": 4.5,
-    "isAvailable": true,
-    "createdAt": "2024-01-10T08:00:00Z",
-    "reviews": [
-      {
-        "userId": "...",
-        "rating": 5,
-        "comment": "Delicious!"
-      }
-    ]
+    "_id": "64c0e1f4d3a5bc0425d1f3b1",
+    "name": "Updated Pizza",
+    "price": 15.99,
+    "isAvailable": true
   },
-  "message": "Food item retrieved successfully",
+  "message": "Food item updated",
   "success": true
 }
 ```
 
-**Error Cases:**
-- `404` - Food item not found
-- `400` - Invalid ID format
+### Delete a food item
+
+**Endpoint**: `DELETE /food/:id`
+
+**Authentication**: required, admin only
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": null,
+  "message": "Food item deleted",
+  "success": true
+}
+```
+
+---
+
+## Order endpoints
+
+### Create an order
+
+**Endpoint**: `POST /orders`
+
+**Authentication**: required
+
+**Body**:
+
+```json
+{
+  "items": [
+    {
+      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
+      "quantity": 2
+    }
+  ],
+  "address": {
+    "fullName": "Jane Doe",
+    "phone": "+1234567890",
+    "street": "123 Main Street",
+    "city": "New York",
+    "country": "USA"
+  }
+}
+```
+
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b2",
+    "user": "64c0e1f4d3a5bc0425d1f3a9",
+    "items": [
+      {
+        "food": "64c0e1f4d3a5bc0425d1f3b1",
+        "quantity": 2,
+        "unitPrice": 14.99,
+        "subtotal": 29.98
+      }
+    ],
+    "totalAmount": 29.98,
+    "status": "pending",
+    "paymentStatus": "pending",
+    "address": {
+      "fullName": "Jane Doe",
+      "phone": "+1234567890",
+      "street": "123 Main Street",
+      "city": "New York",
+      "country": "USA"
+    }
+  },
+  "message": "Order placed successfully",
+  "success": true
+}
+```
+
+**Errors**:
+- `400` if the cart is empty or contains invalid item IDs
+- `400` if the address is incomplete
+
+### Get my orders
+
+**Endpoint**: `GET /orders/my`
+
+**Authentication**: required
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "64c0e1f4d3a5bc0425d1f3b2",
+      "user": "64c0e1f4d3a5bc0425d1f3a9",
+      "totalAmount": 29.98,
+      "status": "pending",
+      "paymentStatus": "pending",
+      "items": [
+        {
+          "food": {
+            "name": "Margherita Pizza",
+            "image": "/uploads/abc123.png",
+            "category": "pizza"
+          },
+          "quantity": 2,
+          "unitPrice": 14.99,
+          "subtotal": 29.98
+        }
+      ]
+    }
+  ],
+  "message": "Your orders",
+  "success": true
+}
+```
+
+---
+
+## Root endpoint
+
+**Endpoint**: `GET /`
+
+**Example response**:
+
+```json
+{
+  "status": "ok",
+  "message": "Food Ordering API (TypeScript)"
+}
+```
+
+---
+
+## Notes
+
+- Admin-only routes are enforced by `protect` and `adminOnly` middleware.
+- Food images are served from `/uploads` and are stored in the backend `uploads/` folder.
+- The backend currently validates required environment variables before booting, so missing values will stop the app from starting.
 
 ---
 

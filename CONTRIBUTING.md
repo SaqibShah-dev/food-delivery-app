@@ -17,7 +17,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ### 1. Fork and Clone
 ```bash
-git clone https://github.com/your-username/food-delivery-app.git
+git clone https://github.com/SaqibShah-dev/food-delivery-app.git
 cd food-delivery-app
 ```
 
