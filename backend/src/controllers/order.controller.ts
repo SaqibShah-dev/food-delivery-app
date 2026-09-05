@@ -49,3 +49,33 @@ export const getMyOrders = asyncHandler(
     res.json(apiResponse(orders, 'Your orders'));
   }
 );
+export const getAll = asyncHandler(
+  async (_req: AuthRequest, res: Response) => {
+    const orders = await orderService.getAllOrders();
+
+    res.json(apiResponse(orders, 'All orders'));
+  }
+);
+
+export const updateStatus = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body as { status?: string };
+
+    if (!id) {
+      const err: any = new Error('Order ID is required');
+      err.status = 400;
+      throw err;
+    }
+
+    if (!status) {
+      const err: any = new Error('Order status is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const updatedOrder = await orderService.updateOrderStatus(id, status);
+
+    res.json(apiResponse(updatedOrder, 'Order status updated'));
+  }
+);
