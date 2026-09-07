@@ -1,8 +1,6 @@
 # API Documentation
 
-This document covers the endpoints implemented in the current backend.
-
----
+This document describes the current backend API exposed by the project.
 
 ## Base URL
 
@@ -10,17 +8,15 @@ This document covers the endpoints implemented in the current backend.
 http://localhost:5000/api
 ```
 
-The app also exposes a root health endpoint at:
+The backend also exposes a health endpoint at:
 
 ```text
 http://localhost:5000/
 ```
 
----
+## Response Format
 
-## Response format
-
-The backend returns a consistent `apiResponse` envelope:
+The API uses a shared response envelope:
 
 ```json
 {
@@ -31,7 +27,7 @@ The backend returns a consistent `apiResponse` envelope:
 }
 ```
 
-Error responses are passed through the global error middleware and usually include:
+Error responses follow the same shape, for example:
 
 ```json
 {
@@ -42,25 +38,25 @@ Error responses are passed through the global error middleware and usually inclu
 }
 ```
 
----
-
 ## Authentication
 
-Protected endpoints require a Bearer token in the `Authorization` header:
+Protected routes require a Bearer JWT in the `Authorization` header:
 
 ```http
 Authorization: Bearer <jwt_token>
 ```
 
+The auth middleware verifies the token and attaches the user to the request. Admin-only routes also check the `role` value.
+
 ---
 
-## Auth endpoints
+## Auth Endpoints
 
 ### Register a new user
 
-**Endpoint**: `POST /auth/register`
+**Method**: `POST /auth/register`
 
-**Body**:
+**Request body**:
 
 ```json
 {
@@ -90,15 +86,14 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Errors**:
-- `400` if the email already exists
-- `401` or `400` depending on validation failures
+**Common errors**:
+- `400` for validation issues or duplicate email
 
 ### Login
 
-**Endpoint**: `POST /auth/login`
+**Method**: `POST /auth/login`
 
-**Body**:
+**Request body**:
 
 ```json
 {
@@ -126,16 +121,16 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Errors**:
+**Common errors**:
 - `401` for invalid credentials
 
 ---
 
-## Food endpoints
+## Food Endpoints
 
-### Get all available food items
+### Get all food items
 
-**Endpoint**: `GET /food`
+**Method**: `GET /food`
 
 **Authentication**: not required
 
@@ -164,11 +159,11 @@ Authorization: Bearer <jwt_token>
 
 ### Create a food item
 
-**Endpoint**: `POST /food`
+**Method**: `POST /food`
 
 **Authentication**: required, admin only
 
-**Body**: multipart form-data
+**Body**: `multipart/form-data`
 
 ```text
 name: "Margherita Pizza"
@@ -197,18 +192,18 @@ image: <file>
 }
 ```
 
-**Errors**:
+**Common errors**:
 - `400` if required fields are missing
 - `400` if an image is not uploaded
 - `403` if the user is not an admin
 
 ### Update a food item
 
-**Endpoint**: `PUT /food/:id`
+**Method**: `PUT /food/:id`
 
 **Authentication**: required, admin only
 
-**Body**: multipart form-data, optional fields as needed
+**Body**: `multipart/form-data`
 
 ```text
 name: "Updated Pizza"
@@ -218,6 +213,237 @@ image: <file>
 ```
 
 **Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b1",
+    "name": "Updated Pizza",
+    "price": 15.99,
+    "isAvailable": true
+  },
+  "message": "Food item updated",
+  "success": true
+}
+```
+
+### Delete a food item
+
+**Method**: `DELETE /food/:id`
+
+**Authentication**: required, admin only
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": null,
+  "message": "Food item deleted",
+  "success": true
+}
+```
+
+---
+
+## Order Endpoints
+
+### Create an order
+
+**Method**: `POST /orders`
+
+**Authentication**: required
+
+**Request body**:
+
+```json
+{
+  "items": [
+    {
+      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
+      "quantity": 2
+    }
+  ],
+  "address": {
+    "fullName": "Jane Doe",
+    "phone": "+1234567890",
+    "street": "123 Main Street",
+    "city": "New York",
+    "country": "USA"
+  }
+}
+```
+
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b2",
+    "user": "64c0e1f4d3a5bc0425d1f3a9",
+    "items": [
+      {
+        "food": "64c0e1f4d3a5bc0425d1f3b1",
+        "quantity": 2,
+        "unitPrice": 14.99,
+        "subtotal": 29.98
+      }
+    ],
+    "totalAmount": 29.98,
+    "status": "pending",
+    "paymentStatus": "pending",
+    "address": {
+      "fullName": "Jane Doe",
+      "phone": "+1234567890",
+      "street": "123 Main Street",
+      "city": "New York",
+      "country": "USA"
+    }
+  },
+  "message": "Order placed successfully",
+  "success": true
+}
+```
+
+**Common errors**:
+- `400` if the cart is empty or contains invalid IDs
+- `400` if the address is incomplete
+
+### Get my orders
+
+**Method**: `GET /orders/my`
+
+**Authentication**: required
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "64c0e1f4d3a5bc0425d1f3b2",
+      "user": "64c0e1f4d3a5bc0425d1f3a9",
+      "totalAmount": 29.98,
+      "status": "pending",
+      "paymentStatus": "pending",
+      "items": [
+        {
+          "food": {
+            "name": "Margherita Pizza",
+            "image": "/uploads/abc123.png",
+            "category": "pizza"
+          },
+          "quantity": 2,
+          "unitPrice": 14.99,
+          "subtotal": 29.98
+        }
+      ]
+    }
+  ],
+  "message": "Your orders",
+  "success": true
+}
+```
+
+### Get all orders
+
+**Method**: `GET /orders`
+
+**Authentication**: required, admin only
+
+### Update order status
+
+**Method**: `PATCH /orders/:id/status`
+
+**Authentication**: required, admin only
+
+**Request body**:
+
+```json
+{
+  "status": "confirmed"
+}
+```
+
+Allowed values include:
+- `pending`
+- `confirmed`
+- `preparing`
+- `out-for-delivery`
+- `delivered`
+- `cancelled`
+
+---
+
+## Payment Endpoints
+
+### Create Stripe checkout session
+
+**Method**: `POST /payment/create-checkout-session`
+
+**Authentication**: required
+
+**Request body**:
+
+```json
+{
+  "items": [
+    {
+      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
+      "quantity": 1
+    }
+  ],
+  "address": {
+    "fullName": "Jane Doe",
+    "phone": "+1234567890",
+    "street": "123 Main Street",
+    "city": "New York",
+    "country": "USA"
+  }
+}
+```
+
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "checkoutUrl": "https://checkout.stripe.com/...",
+    "sessionId": "cs_test_..."
+  },
+  "message": "Stripe Checkout session created",
+  "success": true
+}
+```
+
+**Common errors**:
+- `400` if the cart is empty or invalid
+- `400` if required address fields are missing
+
+---
+
+## Root Endpoint
+
+**Method**: `GET /`
+
+**Example response**:
+
+```json
+{
+  "status": "ok",
+  "message": "Food Ordering API (TypeScript)"
+}
+```
+
+## Notes
+
+- admin-only routes are enforced by the `protect` and `adminOnly` middleware
+- uploaded food images are served from `/uploads` under the backend `uploads/` directory
+- required environment variables are validated before the server starts
 
 ```json
 {

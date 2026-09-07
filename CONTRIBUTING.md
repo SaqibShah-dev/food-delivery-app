@@ -1,222 +1,107 @@
-# Contributing to Food Delivery App
+# Contributing Guide
 
-Thank you for your interest in contributing! This document provides guidelines and instructions for contributing to the project.
-
----
+Thanks for helping improve the project.
 
 ## Code of Conduct
 
-- Be respectful and inclusive
-- Focus on the code, not the person
-- Help others learn and grow
-- Report issues constructively
+- be respectful and constructive
+- keep feedback focused on the code and the problem
+- document decisions that affect the application workflow
+- avoid committing secrets or environment-specific credentials
 
----
+## Development Workflow
 
-## Getting Started
+### 1. Fork and clone the repository
 
-### 1. Fork and Clone
 ```bash
 git clone https://github.com/SaqibShah-dev/food-delivery-app.git
 cd food-delivery-app
 ```
 
-### 2. Create a Branch
+### 2. Create a feature branch
+
 ```bash
-git checkout -b feature/your-feature-name
+git checkout -b feature/my-change
 ```
 
-Branch naming conventions:
-- `feature/` - New features
-- `fix/` - Bug fixes
-- `docs/` - Documentation updates
-- `refactor/` - Code refactoring
-- `test/` - Adding tests
+Recommended branch prefixes:
+- `feature/` for new features
+- `fix/` for bug fixes
+- `docs/` for documentation changes
+- `refactor/` for cleanup and restructure
 
-### 3. Set Up Development Environment
+### 3. Install project dependencies
+
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
 ```
 
----
+### 4. Configure your local environment
 
-## Making Changes
+Create a `backend/.env` file using the values from [Readme.md](Readme.md). Do not commit this file.
 
-### Code Standards
+## Coding Standards
 
-#### TypeScript
-- Use strict mode: `"strict": true` in tsconfig.json
-- Avoid `any` type; use proper typing
-- Define interfaces for complex objects
+### TypeScript
 
-```typescript
-// Good
-interface User {
-  id: string;
-  email: string;
-  role: 'user' | 'admin';
-}
+- prefer explicit types for request, response, and service data
+- keep business logic in service files instead of controllers when possible
+- avoid using `any` unless there is no safer type available
 
-// Avoid
-const user: any = {};
-```
+### Naming
 
-#### Variable Naming
-- Use camelCase for variables and functions
-- Use PascalCase for classes and types
-- Use UPPER_SNAKE_CASE for constants
+- use `camelCase` for variables and functions
+- use `PascalCase` for classes and interfaces
+- use `UPPER_SNAKE_CASE` for constants
 
-```typescript
-const userName = "John";
-class UserService {}
-type UserType = { name: string };
-const DEFAULT_PORT = 5000;
-```
+### Backend conventions
 
-#### Comments
-- Write comments for "why", not "what"
-- Keep comments up-to-date with code changes
+- keep route definitions in `backend/src/routes/`
+- handle request validation in controllers or middleware
+- put shared business logic in `backend/src/services/`
+- keep response formatting consistent with the helper in `backend/src/utils/apiResponse.ts`
 
-```typescript
-// Good
-// Cache results for 5 minutes to reduce database queries
-const cachedData = cache.get('key') || fetchFromDB();
+### Frontend conventions
 
-// Avoid
-// Get data from database
-const data = fetchFromDB();
-```
+- keep API logic in `frontend/src/services/`
+- organize UI by component or page feature area
+- keep styles close to the component or page that uses them
 
-### Backend Changes
+## Validation Before Opening a PR
 
-#### Adding an API Endpoint
-1. Create controller method in `src/controllers/`
-2. Create route in `src/routes/`
-3. Add Zod schema validation in `src/types/`
-4. Implement service logic in `src/services/`
+### Backend
 
-```typescript
-// Controller
-export const getFood = asyncHandler(async (req, res) => {
-  const food = await FoodService.getFoodById(req.params.id);
-  return res.json(new ApiResponse(200, food, "Food fetched"));
-});
-
-// Route
-router.get('/:id', getFood);
-
-// Type/Validation
-const FoodIdSchema = z.object({
-  id: z.string().regex(/^[0-9a-f]{24}$/, "Invalid MongoDB ID")
-});
-
-// Service
-export const getFoodById = async (id: string) => {
-  return await FoodItem.findById(id);
-};
-```
-
-#### Writing Database Queries
-- Use async/await syntax
-- Implement proper error handling
-- Use TypeScript types for query results
-
-```typescript
-async function getUserWithOrders(userId: string) {
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    const orders = await Order.find({ userId });
-    return { user, orders };
-  } catch (error) {
-    logger.error("Database error:", error);
-    throw error;
-  }
-}
-```
-
-### Frontend Changes
-
-#### Creating a Component
-1. Create component file: `src/components/[category]/ComponentName.tsx`
-2. Create styles: `src/components/[category]/ComponentName.module.css`
-3. Export from index: `src/components/[category]/index.ts`
-
-```typescript
-// ComponentName.tsx
-import styles from './ComponentName.module.css';
-
-interface ComponentProps {
-  title: string;
-  onAction: () => void;
-}
-
-export const ComponentName: React.FC<ComponentProps> = ({ title, onAction }) => {
-  return (
-    <div className={styles.container}>
-      <h2>{title}</h2>
-      <button onClick={onAction}>Action</button>
-    </div>
-  );
-};
-```
-
-#### API Calls
-- Keep API calls in `src/services/`
-- Use axios or fetch with proper error handling
-- Type all responses with TypeScript
-
-```typescript
-// src/services/foodService.ts
-export const getFoodItems = async () => {
-  const response = await fetch(`${API_URL}/api/food`);
-  if (!response.ok) throw new Error('Failed to fetch');
-  return response.json() as Promise<FoodResponse>;
-};
-```
-
----
-
-## Testing
-
-### Before Submitting a PR
-
-#### Backend
 ```bash
 cd backend
-npm run lint      # Check for linting issues
-npm run build     # Verify TypeScript compilation
-npm test          # Run test suite
+npm run build
 ```
 
-#### Frontend
+### Frontend
+
 ```bash
 cd frontend
-npm run lint      # Check for linting issues
-npm run build     # Verify build succeeds
-npm test          # Run test suite (if available)
+npm run build
+npm run lint
 ```
 
-### Writing Tests
+## Pull Request Expectations
 
-#### Backend Test Example
-```typescript
-// src/services/__tests__/food.service.test.ts
-describe('FoodService', () => {
-  it('should fetch food items', async () => {
-    const foods = await FoodService.getAllFoods();
-    expect(foods).toBeInstanceOf(Array);
-  });
+Before submitting a pull request:
 
-  it('should handle not found error', async () => {
-    await expect(FoodService.getFoodById('invalid-id'))
-      .rejects.toThrow('Food not found');
-  });
-});
-```
+- make sure the change has been tested locally
+- update the relevant documentation if the behavior or API changes
+- keep the scope narrow and focused
+- explain the rationale and impact in the PR description
+
+## Documentation Updates
+
+When you change an API contract or local workflow, update the relevant docs:
+
+- [Readme.md](Readme.md)
+- [API.md](API.md)
+- [DEVELOPMENT.md](DEVELOPMENT.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
