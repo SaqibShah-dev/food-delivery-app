@@ -10,72 +10,51 @@ export const getAll = asyncHandler(async (_req: AuthRequest, res: Response) => {
   res.json(apiResponse(items));
 });
 
-export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { name, description, price, category } = (req.body ?? {}) as {
-    name: string;
-    description: string;
-    price: string | number;
-    category: string;
-  };
+export const create = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { name, description, price, category } = req.body as {
+      name: string;
+      description: string;
+      price: number;
+      category: string;
+    };
 
-  if (!name || !description || price === undefined || !category) {
-    const err: any = new Error(
-      'name, description, price, and category are required'
+    const item = await foodService.create({
+      name,
+      description,
+      price,
+      category,
+      image: `/uploads/${req.file!.filename}`,
+      isAvailable: true,
+    });
+
+    res.status(201).json(
+      apiResponse(item, 'Food item created', 201)
     );
-    err.status = 400;
-    throw err;
   }
+);
 
-  if (!req.file) {
-    const err: any = new Error('Food image is required');
-    err.status = 400;
-    throw err;
+export const update = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string' || !id.trim()) {
+      const err: any = new Error('A valid food item ID is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const updateData = req.body as Partial<IFoodItem>;
+
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+
+    const item = await foodService.updateById(id, updateData);
+
+    res.json(apiResponse(item, 'Food item updated'));
   }
-
-  const numericPrice = Number(price);
-
-  if (Number.isNaN(numericPrice) || numericPrice <= 0) {
-    const err: any = new Error('Price must be a number greater than 0');
-    err.status = 400;
-    throw err;
-  }
-
-  const item = await foodService.create({
-    name: name.trim(),
-    description: description.trim(),
-    price: numericPrice,
-    category: category.trim(),
-    image: `/uploads/${req.file.filename}`,
-    isAvailable: true,
-  });
-
-  res.status(201).json(apiResponse(item, 'Food item created', 201));
-});
-
-export const update = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  if (typeof id !== 'string') {
-    const err: any = new Error('Invalid food item id');
-    err.status = 400;
-    throw err;
-  }
-  const { name, description, price, category, isAvailable } = req.body as Partial<IFoodItem>;
-
-  const updateData: Partial<IFoodItem> = {
-    name,
-    description,
-    price,
-    category,
-    isAvailable,
-  };
-
-  if (req.file) {
-    updateData.image = `/uploads/${req.file.filename}`;
-  }
-
-  const item = await foodService.updateById(id, updateData);
-  res.json(apiResponse(item, 'Food item updated'));
-});
+);
 
 export const remove = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
