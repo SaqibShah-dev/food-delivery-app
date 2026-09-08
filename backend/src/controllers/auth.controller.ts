@@ -14,14 +14,19 @@ const generateToken = (user: any) =>
   );
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, password, role } = req.body as {
+  const { name, email, password } = req.body as {
     name: string;
     email: string;
     password: string;
-    role?: 'user' | 'admin';
   };
 
-  const user = await authService.register({ name, email, password, role });
+  const user = await authService.register({
+    name,
+    email,
+    password,
+    role: 'user',
+  });
+
   const token = generateToken(user);
 
   res.status(201).json(
@@ -35,7 +40,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
           role: user.role,
         },
       },
-      'User registered'
+      'User registered',
+      201
     )
   );
 });
