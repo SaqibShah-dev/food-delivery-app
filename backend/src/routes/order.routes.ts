@@ -3,6 +3,11 @@ import {
   protect,
   adminOnly,
 } from '../middleware/auth.middleware.js';
+import { validateBody } from '../middleware/validate.middleware.js';
+import {
+  createOrderSchema,
+  updateOrderStatusSchema,
+} from '../validators/order.validator.js';
 import {
   create,
   getMyOrders,
@@ -12,12 +17,20 @@ import {
 
 const router = express.Router();
 
-// Logged-in customer routes
-router.post('/', protect, create);
+// Customer routes
+router.post('/', protect, validateBody(createOrderSchema), create);
+
 router.get('/my', protect, getMyOrders);
 
-// Admin-only routes
+// Admin routes
 router.get('/', protect, adminOnly, getAll);
-router.patch('/:id/status', protect, adminOnly, updateStatus);
+
+router.patch(
+  '/:id/status',
+  protect,
+  adminOnly,
+  validateBody(updateOrderStatusSchema),
+  updateStatus
+);
 
 export default router;
