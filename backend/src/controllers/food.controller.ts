@@ -5,10 +5,21 @@ import { apiResponse } from '../utils/apiResponse.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
 import { IFoodItem } from '../types/index.js';
 
-export const getAll = asyncHandler(async (_req: AuthRequest, res: Response) => {
-  const items = await foodService.getAllAvailable();
-  res.json(apiResponse(items));
-});
+export const getAll = asyncHandler(
+  async (_req: AuthRequest, res: Response) => {
+    const items = await foodService.getAllAvailable();
+
+    res.json(apiResponse(items));
+  }
+);
+
+export const getAllForAdmin = asyncHandler(
+  async (_req: AuthRequest, res: Response) => {
+    const items = await foodService.getAllForAdmin();
+
+    res.json(apiResponse(items, 'All food items for admin'));
+  }
+);
 
 export const create = asyncHandler(
   async (req: AuthRequest, res: Response) => {

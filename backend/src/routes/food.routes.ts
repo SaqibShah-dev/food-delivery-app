@@ -12,6 +12,7 @@ import {
 } from '../validators/food.validator.js';
 import {
   getAll,
+  getAllForAdmin,
   create,
   update,
   remove,
@@ -19,10 +20,14 @@ import {
 
 const router = express.Router();
 
-// Public route: customers can view available food
+// Public route: customers can view available food only
 router.get('/', getAll);
 
-// Admin routes
+// Admin route: admin can view every food item,
+// including unavailable food items
+router.get('/admin/all', protect, adminOnly, getAllForAdmin);
+
+// Admin route: create a food item
 router.post(
   '/',
   protect,
@@ -33,6 +38,7 @@ router.post(
   create
 );
 
+// Admin route: partially update a food item
 router.patch(
   '/:id',
   protect,
@@ -42,6 +48,7 @@ router.patch(
   update
 );
 
+// Admin route: delete a food item
 router.delete('/:id', protect, adminOnly, remove);
 
 export default router;
