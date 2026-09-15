@@ -1,6 +1,6 @@
 # API Documentation
 
-This document describes the current backend API exposed by the project.
+This document describes the backend API exposed by the project and reflects the current route structure used in the app.
 
 ## Base URL
 
@@ -8,7 +8,7 @@ This document describes the current backend API exposed by the project.
 http://localhost:5000/api
 ```
 
-The backend also exposes a health endpoint at:
+The server also exposes a health endpoint at:
 
 ```text
 http://localhost:5000/
@@ -16,7 +16,7 @@ http://localhost:5000/
 
 ## Response Format
 
-The API uses a shared response envelope:
+The API uses a shared response wrapper for successful and failed requests:
 
 ```json
 {
@@ -27,7 +27,7 @@ The API uses a shared response envelope:
 }
 ```
 
-Error responses follow the same shape, for example:
+Error responses follow the same envelope:
 
 ```json
 {
@@ -40,21 +40,23 @@ Error responses follow the same shape, for example:
 
 ## Authentication
 
-Protected routes require a Bearer JWT in the `Authorization` header:
+Protected routes require a Bearer token in the `Authorization` header:
 
 ```http
 Authorization: Bearer <jwt_token>
 ```
 
-The auth middleware verifies the token and attaches the user to the request. Admin-only routes also check the `role` value.
+The `protect` middleware verifies the token and attaches the user to the request. Admin-only endpoints also check the user role.
 
 ---
 
 ## Auth Endpoints
 
-### Register a new user
+### Register a user
 
 **Method**: `POST /auth/register`
+
+**Authentication**: not required
 
 **Request body**:
 
@@ -62,8 +64,7 @@ The auth middleware verifies the token and attaches the user to the request. Adm
 {
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "password": "securePassword123",
-  "role": "user"
+  "password": "securePassword123"
 }
 ```
 
@@ -87,11 +88,15 @@ The auth middleware verifies the token and attaches the user to the request. Adm
 ```
 
 **Common errors**:
-- `400` for validation issues or duplicate email
+
+- `400` validation failure or duplicate email
+- `409` style conflicts are not currently used here; validation is the primary guard
 
 ### Login
 
 **Method**: `POST /auth/login`
+
+**Authentication**: not required
 
 **Request body**:
 
@@ -122,17 +127,47 @@ The auth middleware verifies the token and attaches the user to the request. Adm
 ```
 
 **Common errors**:
-- `401` for invalid credentials
+
+- `401` invalid email or password
 
 ---
 
 ## Food Endpoints
 
-### Get all food items
+### Get all available food items
 
 **Method**: `GET /food`
 
 **Authentication**: not required
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "64c0e1f4d3a5bc0425d1f3b1",
+      "name": "Margherita Pizza",
+      "description": "Classic pizza with mozzarella",
+      "price": 14.99,
+      "category": "pizza",
+      "image": "/uploads/abc123.png",
+      "isAvailable": true,
+      "createdAt": "2026-09-04T10:00:00.000Z",
+      "updatedAt": "2026-09-04T10:00:00.000Z"
+    }
+  ],
+  "message": "Success",
+  "success": true
+}
+```
+
+### Get all food items for admins
+
+**Method**: `GET /food/admin/all`
+
+**Authentication**: required, admin only
 
 **Example response**:
 
@@ -193,13 +228,13 @@ image: <file>
 ```
 
 **Common errors**:
-- `400` if required fields are missing
-- `400` if an image is not uploaded
-- `403` if the user is not an admin
+
+- `400` validation failure or missing image
+- `403` if the caller is not an admin
 
 ### Update a food item
 
-**Method**: `PUT /food/:id`
+**Method**: `PATCH /food/:id`
 
 **Authentication**: required, admin only
 
@@ -218,6 +253,269 @@ image: <file>
 {
   "statusCode": 200,
   "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b1",
+    "name": "Updated Pizza",
+    "description": "Classic pizza with mozzarella",
+    "price": 15.99,
+    "category": "pizza",
+    "isAvailable": true
+  },
+  "message": "Food item updated",
+  "success": true
+}
+```
+
+**Common errors**:
+
+- `400` no valid fields provided or invalid values
+- `404` food item not found
+- `403` if the caller is not an admin
+
+### Delete a food item
+
+**Method**: `DELETE /food/:id`
+
+**Authentication**: required, admin only
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3b1"
+  },
+  "message": "Food item deleted",
+  "success": true
+}
+```
+
+---
+
+## Order Endpoints
+
+### Create an order
+
+**Method**: `POST /orders`
+
+**Authentication**: required
+
+**Request body**:
+
+```json
+{
+  "items": [
+    {
+      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
+      "quantity": 2
+    }
+  ],
+  "address": {
+    "fullName": "Jane Doe",
+    "phone": "+1234567890",
+    "street": "123 Main Street",
+    "city": "New York",
+    "country": "USA"
+  }
+}
+```
+
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3c9",
+    "user": "64c0e1f4d3a5bc0425d1f3b1",
+    "items": [
+      {
+        "food": "64c0e1f4d3a5bc0425d1f3b1",
+        "quantity": 2,
+        "unitPrice": 14.99,
+        "subtotal": 29.98
+      }
+    ],
+    "totalAmount": 29.98,
+    "status": "pending",
+    "paymentStatus": "pending",
+    "address": {
+      "fullName": "Jane Doe",
+      "phone": "+1234567890",
+      "street": "123 Main Street",
+      "city": "New York",
+      "country": "USA"
+    }
+  },
+  "message": "Order created",
+  "success": true
+}
+```
+
+**Common errors**:
+
+- `400` invalid items or shipping address details
+- `401` missing or invalid token
+
+### Get my orders
+
+**Method**: `GET /orders/my`
+
+**Authentication**: required
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "64c0e1f4d3a5bc0425d1f3c9",
+      "status": "pending",
+      "totalAmount": 29.98,
+      "createdAt": "2026-09-04T10:00:00.000Z"
+    }
+  ],
+  "message": "Success",
+  "success": true
+}
+```
+
+### Get all orders (admin)
+
+**Method**: `GET /orders`
+
+**Authentication**: required, admin only
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "64c0e1f4d3a5bc0425d1f3c9",
+      "user": "64c0e1f4d3a5bc0425d1f3b1",
+      "status": "confirmed",
+      "totalAmount": 29.98
+    }
+  ],
+  "message": "Success",
+  "success": true
+}
+```
+
+### Update order status (admin)
+
+**Method**: `PATCH /orders/:id/status`
+
+**Authentication**: required, admin only
+
+**Request body**:
+
+```json
+{
+  "status": "preparing"
+}
+```
+
+**Allowed values**:
+
+- `pending`
+- `confirmed`
+- `preparing`
+- `out-for-delivery`
+- `delivered`
+- `cancelled`
+
+**Example response**:
+
+```json
+{
+  "statusCode": 200,
+  "data": {
+    "_id": "64c0e1f4d3a5bc0425d1f3c9",
+    "status": "preparing"
+  },
+  "message": "Order status updated",
+  "success": true
+}
+```
+
+---
+
+## Payment Endpoints
+
+### Create a Stripe checkout session
+
+**Method**: `POST /payment/create-checkout-session`
+
+**Authentication**: required
+
+**Request body**:
+
+```json
+{
+  "items": [
+    {
+      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
+      "quantity": 1
+    }
+  ],
+  "address": {
+    "fullName": "Jane Doe",
+    "phone": "+1234567890",
+    "street": "123 Main Street",
+    "city": "New York",
+    "country": "USA"
+  }
+}
+```
+
+**Example response**:
+
+```json
+{
+  "statusCode": 201,
+  "data": {
+    "sessionId": "cs_test_123",
+    "url": "https://checkout.stripe.com/xxx"
+  },
+  "message": "Stripe Checkout session created",
+  "success": true
+}
+```
+
+**Common errors**:
+
+- `400` missing delivery address or invalid address fields
+- `401` missing or invalid JWT
+
+---
+
+## Health Check
+
+### Root endpoint
+
+**Method**: `GET /`
+
+**Authentication**: not required
+
+**Example response**:
+
+```json
+{
+  "status": "ok",
+  "message": "Food Ordering API is running"
+}
+```
+
+## Notes
+
+- Food image uploads are served from `/uploads`.
+- Request validation is handled with Zod schemas in the validators folder.
+- The app expects required environment variables to be defined before the server starts.
+
     "_id": "64c0e1f4d3a5bc0425d1f3b1",
     "name": "Updated Pizza",
     "price": 15.99,

@@ -1,7 +1,11 @@
 ﻿# Architecture Overview
+
 This project follows a simple layered architecture built around a React frontend and an Express + MongoDB backend.
+
 ---
+
 ## System Overview
+
 ```text
 Browser / Client
     ↓
@@ -11,7 +15,7 @@ HTTP requests to /api
     ↓
 Express API server
     ↓
-JWT auth middleware + route handlers
+JWT auth middleware + route validation
     ↓
 Service layer
     ↓
@@ -19,45 +23,71 @@ Mongoose models
     ↓
 MongoDB
 ```
+
 ---
+
 ## Frontend Layer
-The frontend is a Vite-based React application. The current codebase uses standard component-based structure with `src/components`, `src/pages`, `src/context`, and `src/services` folders.
+
+The frontend is a Vite-based React application organized into feature-oriented folders such as `components`, `pages`, `context`, `services`, and `hooks`.
+
 Main responsibilities:
-- render the application shell and pages
-- manage client-side state
-- call the backend API
-- display food listings and user order data
+
+- render the web app shell and pages
+- manage client-side state and user context
+- call backend APIs for auth, food, ordering, and payments
+- display product listings, carts, and order data
+
 ---
+
 ## Backend Layer
-The backend is a TypeScript Express application with the following structure:
-- `app.ts`: Express app setup and middleware
-- `routes/index.ts`: route aggregation
-- `controllers/*`: HTTP request handling
-- `services/*`: business logic
-- `models/*`: MongoDB schemas
-- `middleware/*`: auth and error handling
-- `utils/*`: shared API helper functions
+
+The backend is a TypeScript Express app structured for a clean route-to-service flow.
+
+Core responsibilities:
+
+- `app.ts`: Express app setup and global middleware
+- `routes/index.ts`: aggregates route modules
+- `controllers/*`: HTTP request handling and orchestration
+- `services/*`: business logic and domain rules
+- `models/*`: MongoDB schemas and data access models
+- `middleware/*`: auth, validation, upload, and error handling
+- `utils/*`: shared response helpers
+- `validators/*`: Zod validation schemas
+
 ### Actual route structure
+
 ```text
 /api/auth
   POST /register
   POST /login
+
 /api/food
   GET /
-  POST /   (admin only)
-  PUT /:id (admin only)
-  DELETE /:id (admin only)
+  GET /admin/all   (admin only)
+  POST /           (admin only)
+  PATCH /:id       (admin only)
+  DELETE /:id      (admin only)
+
 /api/orders
-  POST /   (authenticated user)
-  GET /my  (authenticated user)
+  POST /           (authenticated user)
+  GET /my          (authenticated user)
+  GET /            (admin only)
+  PATCH /:id/status (admin only)
+
+/api/payment
+  POST /create-checkout-session (authenticated user)
 ```
+
 ---
+
 ## Authentication Flow
+
 The backend uses JWT tokens for protected routes.
+
 ```text
 Register/Login request
     ↓
-Auth service validates user credentials
+Auth service validates email and password
     ↓
 JWT is created with user id and role
     ↓
@@ -67,13 +97,19 @@ protect middleware verifies the token
     ↓
 adminOnly middleware checks role = admin when required
 ```
-The authentication logic is implemented in:
+
+The authentication logic lives in:
+
 - `backend/src/services/auth.service.ts`
 - `backend/src/middleware/auth.middleware.ts`
 - `backend/src/controllers/auth.controller.ts`
+
 ---
+
 ## Food Domain
+
 Food items are stored in the `FoodItem` model and include:
+
 - name
 - description
 - price
@@ -81,24 +117,36 @@ Food items are stored in the `FoodItem` model and include:
 - image
 - isAvailable
 - timestamps
-The admin endpoints allow creation, update, and deletion of these items. Public listing is exposed via `GET /api/food`.
+
+Admin endpoints allow creation, update, and deletion of catalog items. Public browsing is exposed through `GET /api/food`.
+
 ---
+
 ## Order Domain
-Orders are created from the authenticated user and contain:
+
+Orders are created from the authenticated user and include:
+
 - user reference
-- list of order items
+- list of ordered items
 - delivery address
 - total amount
-- status
-- paymentStatus
+- order status
+- payment status
+
 The ordering workflow is handled by:
+
 - `backend/src/controllers/order.controller.ts`
 - `backend/src/services/order.service.ts`
 - `backend/src/models/Order.model.ts`
-The service validates item IDs, quantity, and required address fields before creating an order.
+
+The service validates item IDs, quantities, and address properties before creating a new order.
+
 ---
+
 ## Data Model Summary
+
 ### User
+
 ```text
 User {
   name: string
@@ -109,7 +157,9 @@ User {
   updatedAt
 }
 ```
+
 ### FoodItem
+
 ```text
 FoodItem {
   name: string
@@ -122,7 +172,9 @@ FoodItem {
   updatedAt
 }
 ```
+
 ### Order
+
 ```text
 Order {
   user: string
@@ -135,8 +187,11 @@ Order {
   updatedAt
 }
 ```
+
 ---
+
 ## Request Flow
+
 ```text
 Incoming HTTP request
     ↓
@@ -158,17 +213,27 @@ Formatted API response
     ↓
 Error middleware when needed
 ```
+
 ---
+
 ## Security Notes
+
 - passwords are hashed with bcryptjs before storage
 - JWTs are required for protected endpoints
 - admin-only routes check the user role in middleware
-- environment variables are validated before server startup in `src/config/env.ts`
+- environment variables are validated before startup in `backend/src/config/env.ts`
+- uploaded menu images are stored under `backend/uploads/`
+
 ---
+
 ## Current Scope
-This version of the application is intentionally scoped to the core food-ordering flow:
-- auth
+
+This version of the app intentionally focuses on the core food-ordering workflow:
+
+- authentication and role checks
 - food catalog management
 - order creation and retrieval
 - image uploads for products
-It does not yet include a complete checkout/payment flow, notifications, or a fully expanded admin dashboard beyond the existing route protection and CRUD logic.
+- Stripe checkout session creation
+
+It does not yet include advanced marketplace features such as real-time notifications, payment reconciliation, a complete analytics dashboard, or a large-scale multi-admin system.

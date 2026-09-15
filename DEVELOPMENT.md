@@ -1,10 +1,10 @@
 ﻿# Development Guide
 
-This guide explains how to run, modify, and extend the project during local development.
+This guide explains how to set up the project locally, run it in development mode, and contribute changes safely.
 
 ## Prerequisites
 
-Before you start, install the following:
+Before you begin, make sure you have:
 
 - Node.js 18+
 - npm
@@ -87,8 +87,8 @@ http://localhost:5173
 
 ```bash
 cd backend
-npm run dev    # development mode
-npm run build  # compile the TypeScript API
+npm run dev    # start development mode
+npm run build  # compile the TypeScript app
 npm start      # run the built server
 ```
 
@@ -96,7 +96,7 @@ npm start      # run the built server
 
 ```bash
 cd frontend
-npm run dev    # launch the Vite dev server
+npm run dev    # start the Vite dev server
 npm run build  # create a production build
 npm run lint   # run ESLint
 npm run preview # preview the production build locally
@@ -122,7 +122,9 @@ backend/
 │   ├── middleware/
 │   │   ├── auth.middleware.ts
 │   │   ├── error.middleware.ts
-│   │   └── upload.middleware.ts
+│   │   ├── requireFile.middleware.ts
+│   │   ├── upload.middleware.ts
+│   │   └── validate.middleware.ts
 │   ├── models/
 │   │   ├── FoodItem.model.ts
 │   │   ├── Order.model.ts
@@ -143,6 +145,10 @@ backend/
 │   ├── utils/
 │   │   ├── apiResponse.ts
 │   │   └── asyncHandler.ts
+│   ├── validators/
+│   │   ├── auth.validator.ts
+│   │   ├── food.validator.ts
+│   │   └── order.validator.ts
 │   └── tests/
 ├── uploads/
 ├── .env
@@ -181,32 +187,57 @@ frontend/
 
 ## Request Flow
 
-The app follows a simple layered flow:
+The app follows a straightforward layered flow:
 
 1. the browser sends a request to `/api/...`
 2. Express matches the route and applies middleware when required
-3. controllers read request payloads and validate required fields
-4. service classes contain the business logic
+3. controllers interpret the request and validate data
+4. services contain the core business logic
 5. Mongoose reads or writes MongoDB data
-6. the response is returned in the shared API envelope
+6. the response is returned with a shared API envelope
 
 ## Contributing Guidelines
 
 - keep secrets in `backend/.env` and never commit them
-- update [API.md](API.md) when route contracts change
-- keep response payloads consistent with the shared response helper
-- uploaded images are stored inside `backend/uploads/` and exposed via `/uploads`
-- keep business logic in services rather than controllers where possible
+- update [API.md](API.md) when route contracts or payloads change
+- keep response payloads consistent with the shared helper in `backend/src/utils/apiResponse.ts`
+- uploaded images are stored in `backend/uploads/` and exposed through `/uploads`
+- keep business logic in service files rather than controllers whenever possible
+
+## Validation Before Opening a PR
+
+### Backend
+
+```bash
+cd backend
+npm run build
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run build
+npm run lint
+```
+
+## Typical Workflow
+
+1. create a feature branch from the main branch
+2. make the code change
+3. run the relevant build or lint checks
+4. update the relevant docs if behavior or contracts change
+5. open a pull request with a clear summary
 
 ## Current Status
 
-The codebase currently supports the core food-ordering workflow:
+The application currently supports the core food-ordering workflow:
 
-- authentication and role checks
-- food catalog management for admins
-- image uploads
-- customer order creation and retrieval
+- user authentication and role checks
+- food catalog browsing and admin inventory management
+- image uploads for food items
+- customer order creation and order retrieval
 - admin order status management
 - Stripe checkout session generation
 
-It is not yet a complete production-ready marketplace or a large-scale admin system.
+It is not yet a complete production marketplace or a large-scale admin system.
