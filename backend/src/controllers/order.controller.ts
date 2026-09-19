@@ -57,3 +57,37 @@ export const updateStatus = asyncHandler(
     res.json(apiResponse(updatedOrder, 'Order status updated'));
   }
 );
+export const getById = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string' || !id.trim()) {
+      const err: any = new Error('A valid order ID is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const order = await orderService.getById(id);
+
+    if (!order) {
+      const err: any = new Error('Order not found');
+      err.status = 404;
+      throw err;
+    }
+
+    const orderUserId = String(order.user._id);
+
+    const requesterIsOwner = orderUserId === req.user!.id;
+    const requesterIsAdmin = req.user!.role === 'admin';
+
+    if (!requesterIsOwner && !requesterIsAdmin) {
+      const err: any = new Error(
+        'You are not allowed to view this order'
+      );
+      err.status = 403;
+      throw err;
+    }
+
+    res.json(apiResponse(order, 'Order details'));
+  }
+);

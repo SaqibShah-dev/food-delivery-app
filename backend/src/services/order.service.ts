@@ -28,7 +28,9 @@ export const orderService = {
           typeof foodId !== 'string' || !Types.ObjectId.isValid(foodId)
       )
     ) {
-      const err: any = new Error('Every foodId must be a valid food item ID');
+      const err: any = new Error(
+        'Every foodId must be a valid food item ID'
+      );
       err.status = 400;
       throw err;
     }
@@ -99,48 +101,55 @@ export const orderService = {
       .populate('items.food', 'name image category')
       .sort({ createdAt: -1 });
   },
+
   async getAllOrders() {
-  return Order.find()
-    .populate('user', 'name email')
-    .populate('items.food', 'name image category')
-    .sort({ createdAt: -1 });
-},
+    return Order.find()
+      .populate('user', 'name email')
+      .populate('items.food', 'name image category')
+      .sort({ createdAt: -1 });
+  },
 
-async updateOrderStatus(id: string, status: string) {
-  const allowedStatuses = [
-    'pending',
-    'confirmed',
-    'preparing',
-    'out-for-delivery',
-    'delivered',
-    'cancelled',
-  ];
+  async getById(id: string) {
+    return Order.findById(id)
+      .populate('user', 'name email')
+      .populate('items.food', 'name image category');
+  },
 
-  if (!allowedStatuses.includes(status)) {
-    const err: any = new Error(
-      `Invalid order status. Allowed values: ${allowedStatuses.join(', ')}`
-    );
-    err.status = 400;
-    throw err;
-  }
+  async updateOrderStatus(id: string, status: string) {
+    const allowedStatuses = [
+      'pending',
+      'confirmed',
+      'preparing',
+      'out-for-delivery',
+      'delivered',
+      'cancelled',
+    ];
 
-  const order = await Order.findByIdAndUpdate(
-    id,
-    { status },
-    {
-      new: true,
-      runValidators: true,
+    if (!allowedStatuses.includes(status)) {
+      const err: any = new Error(
+        `Invalid order status. Allowed values: ${allowedStatuses.join(', ')}`
+      );
+      err.status = 400;
+      throw err;
     }
-  )
-    .populate('user', 'name email')
-    .populate('items.food', 'name image category');
 
-  if (!order) {
-    const err: any = new Error('Order not found');
-    err.status = 404;
-    throw err;
-  }
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate('user', 'name email')
+      .populate('items.food', 'name image category');
 
-  return order;
-},
+    if (!order) {
+      const err: any = new Error('Order not found');
+      err.status = 404;
+      throw err;
+    }
+
+    return order;
+  },
 };
