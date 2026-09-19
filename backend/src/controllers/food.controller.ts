@@ -67,13 +67,34 @@ export const update = asyncHandler(
   }
 );
 
-export const remove = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  if (typeof id !== 'string') {
-    const err: any = new Error('Invalid food item id');
-    err.status = 400;
-    throw err;
+export const softDelete = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string' || !id.trim()) {
+      const err: any = new Error('A valid food item ID is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const item = await foodService.softDeleteById(id);
+
+    res.json(apiResponse(item, 'Food item hidden from customers'));
   }
-  await foodService.deleteById(id);
-  res.json(apiResponse(null, 'Food item deleted'));
-});
+);
+
+export const restore = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string' || !id.trim()) {
+      const err: any = new Error('A valid food item ID is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const item = await foodService.restoreById(id);
+
+    res.json(apiResponse(item, 'Food item restored and available'));
+  }
+);
