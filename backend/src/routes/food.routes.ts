@@ -12,6 +12,7 @@ import {
 } from '../validators/food.validator.js';
 import {
   getAll,
+  getCategories,
   getAllForAdmin,
   create,
   update,
@@ -21,6 +22,7 @@ import {
 
 const router = express.Router();
 router.get('/', getAll);
+router.get('/categories', getCategories);
 
 router.get('/admin/all', protect, adminOnly, getAllForAdmin);
 
