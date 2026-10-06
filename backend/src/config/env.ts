@@ -6,11 +6,20 @@ dotenv.config();
 const envSchema = z.object({
   PORT: z.string().default('5000'),
   NODE_ENV: z.string().default('development'),
+
   MONGO_URI: z.string(),
   JWT_SECRET: z.string(),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  STRIPE_SECRET_KEY: z.string(),
+
   CLIENT_URL: z.string(),
+
+  API_RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
+  API_RATE_LIMIT_MAX: z.string().default('200'),
+
+  AUTH_RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
+  AUTH_RATE_LIMIT_MAX: z.string().default('20'),
+
+  STRIPE_SECRET_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

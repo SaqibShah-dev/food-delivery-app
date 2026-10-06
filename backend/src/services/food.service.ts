@@ -50,6 +50,17 @@ export const foodService = {
       },
     };
   },
+  async getAvailableCategories() {
+    const categories = await FoodItem.distinct("category", {
+      isAvailable: true,
+    });
+
+    return categories
+      .filter((category): category is string => typeof category === "string")
+      .map((category) => category.trim())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  },
 
   async getAllForAdmin() {
     return FoodItem.find().sort({ createdAt: -1 });
