@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
@@ -52,6 +52,26 @@ export const createCheckoutSession = asyncHandler(
 
     res.status(201).json(
       apiResponse(result, 'Stripe Checkout session created', 201)
+    );
+  }
+);
+
+export const handleWebhook = asyncHandler(
+  async (req: Request, res: Response) => {
+    const signature = req.headers['stripe-signature'] as string | undefined;
+
+    const event = await paymentService.constructWebhookEvent(
+      req.body as Buffer,
+      signature
+    );
+
+    // TODO: Handle specific event types here
+    // For now, just acknowledge receipt
+    res.json(
+      apiResponse(
+        { eventId: event.id, type: event.type },
+        'Webhook received'
+      )
     );
   }
 );

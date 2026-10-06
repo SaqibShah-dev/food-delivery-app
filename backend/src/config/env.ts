@@ -19,7 +19,8 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
   AUTH_RATE_LIMIT_MAX: z.string().default('20'),
 
-  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);
