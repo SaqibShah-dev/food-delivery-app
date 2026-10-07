@@ -15,7 +15,9 @@ type CheckoutAddress = {
   country: string;
 };
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+  apiVersion: '2026-08-26.dahlia',
+});
 
 export const paymentService = {
   async createCheckoutSession(
@@ -128,5 +130,20 @@ export const paymentService = {
       checkoutUrl: session.url,
       sessionId: session.id,
     };
+  },
+
+  async constructWebhookEvent(
+    body: Buffer,
+    signature: string | undefined
+  ): Promise<Stripe.Event> {
+    if (!signature) {
+      throw new Error('Missing Stripe signature');
+    }
+
+    return stripe.webhooks.constructEvent(
+      body,
+      signature,
+      env.STRIPE_WEBHOOK_SECRET
+    );
   },
 };
