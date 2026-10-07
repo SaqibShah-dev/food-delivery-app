@@ -152,4 +152,42 @@ export const orderService = {
 
     return order;
   },
+  async findByPaymentMetadata(
+  userId: string,
+  totalAmount: number,
+  foodIds: string[]
+) {
+  const orders = await Order.find({
+    user: userId,
+    totalAmount,
+    paymentStatus: 'pending',
+    'items.food': { $in: foodIds },
+  })
+    .sort({ createdAt: -1 })
+    .limit(1);
+
+  return orders[0] || null;
+},
+
+async markOrderAsPaid(orderId: string, paymentId: string) {
+  const order = await Order.findByIdAndUpdate(
+    orderId,
+    {
+      paymentStatus: 'paid',
+      paymentId,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  if (!order) {
+    const err: any = new Error('Order not found');
+    err.status = 404;
+    throw err;
+  }
+
+  return order;
+},
 };

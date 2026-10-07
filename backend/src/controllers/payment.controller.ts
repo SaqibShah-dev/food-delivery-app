@@ -6,6 +6,7 @@ import { paymentService } from '../services/payment.service.js';
 import Order from '../models/Order.model.js';
 import mongoose from 'mongoose';
 import FoodItem from '../models/FoodItem.model.js';
+import { orderService } from '../services/order.service.js';
 
 type CheckoutRequestBody = {
   items: {
@@ -59,6 +60,7 @@ export const createCheckoutSession = asyncHandler(
   }
 );
 
+
 export const handleWebhook = asyncHandler(
   async (req: Request, res: Response) => {
     const signature = req.headers['stripe-signature'] as string | undefined;
@@ -73,43 +75,27 @@ export const handleWebhook = asyncHandler(
 
       const userId = session.metadata.userId;
       const itemsMeta = JSON.parse(session.metadata.items);
-      const address = JSON.parse(session.metadata.address);
       const totalAmount = parseFloat(session.metadata.totalAmount);
-      const paymentId = session.id; // Stripe session ID
+      const paymentId = session.id;
 
-      // Validate user exists (optional but recommended)
-      const userObjectId = new mongoose.Types.ObjectId(userId);
+      const foodIds = itemsMeta.map((item: any) => item.foodId);
 
-      // Build order items with food ObjectId and subtotal
-      const orderItems = await Promise.all(
-        itemsMeta.map(async (item: any) => {
-          const food = await FoodItem.findById(item.foodId);
-          if (!food) {
-            const err: any = new Error(`Food item ${item.foodId} not found`);
-            err.status = 400;
-            throw err;
-          }
-
-          const subtotal = Number((item.unitPrice * item.quantity).toFixed(2));
-
-          return {
-            food: new mongoose.Types.ObjectId(item.foodId),
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal,
-          };
-        })
+      // Find the matching pending order
+      const order = await orderService.findByPaymentMetadata(
+        userId,
+        totalAmount,
+        foodIds
       );
 
-      await Order.create({
-        user: userObjectId,
-        items: orderItems,
-        totalAmount,
-        address,
-        status: 'pending',
-        paymentStatus: 'paid',
-        paymentId,
-      });
+      if (!order) {
+        // Log warning but still acknowledge webhook
+        console.warn(
+          `No matching pending order found for user ${userId}, amount ${totalAmount}`
+        );
+      } else {
+        // Mark order as paid
+        await orderService.markOrderAsPaid(order._id.toString(), paymentId);
+      }
     }
 
     // Always acknowledge receipt to Stripe
