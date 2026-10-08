@@ -1,7 +1,7 @@
-import { Types } from 'mongoose';
-import FoodItem from '../models/FoodItem.model.js';
-import Order from '../models/Order.model.js';
-import { IAddress, IOrderItem } from '../types/index.js';
+import { Types } from "mongoose";
+import FoodItem from "../models/FoodItem.model.js";
+import Order from "../models/Order.model.js";
+import { IAddress, IOrderItem } from "../types/index.js";
 
 type RequestedOrderItem = {
   foodId: string;
@@ -12,10 +12,10 @@ export const orderService = {
   async createOrder(
     userId: string,
     requestedItems: RequestedOrderItem[],
-    address: IAddress
+    address: IAddress,
   ) {
     if (!Array.isArray(requestedItems) || requestedItems.length === 0) {
-      const err: any = new Error('Your cart must contain at least one item');
+      const err: any = new Error("Your cart must contain at least one item");
       err.status = 400;
       throw err;
     }
@@ -25,12 +25,10 @@ export const orderService = {
     if (
       foodIds.some(
         (foodId) =>
-          typeof foodId !== 'string' || !Types.ObjectId.isValid(foodId)
+          typeof foodId !== "string" || !Types.ObjectId.isValid(foodId),
       )
     ) {
-      const err: any = new Error(
-        'Every foodId must be a valid food item ID'
-      );
+      const err: any = new Error("Every foodId must be a valid food item ID");
       err.status = 400;
       throw err;
     }
@@ -42,14 +40,14 @@ export const orderService = {
 
     if (foodItems.length !== foodIds.length) {
       const err: any = new Error(
-        'One or more food items do not exist or are unavailable'
+        "One or more food items do not exist or are unavailable",
       );
       err.status = 400;
       throw err;
     }
 
     const foodById = new Map(
-      foodItems.map((food) => [food._id.toString(), food])
+      foodItems.map((food) => [food._id.toString(), food]),
     );
 
     const items: IOrderItem[] = requestedItems.map((requestedItem) => {
@@ -57,7 +55,7 @@ export const orderService = {
 
       if (!Number.isInteger(quantity) || quantity < 1) {
         const err: any = new Error(
-          'Every item quantity must be a whole number greater than 0'
+          "Every item quantity must be a whole number greater than 0",
         );
         err.status = 400;
         throw err;
@@ -66,7 +64,7 @@ export const orderService = {
       const food = foodById.get(requestedItem.foodId);
 
       if (!food) {
-        const err: any = new Error('Food item was not found');
+        const err: any = new Error("Food item was not found");
         err.status = 400;
         throw err;
       }
@@ -83,51 +81,51 @@ export const orderService = {
     });
 
     const totalAmount = Number(
-      items.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2)
+      items.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2),
     );
 
     return Order.create({
       user: userId,
       items,
       totalAmount,
-      status: 'pending',
-      paymentStatus: 'pending',
+      status: "pending",
+      paymentStatus: "pending",
       address,
     });
   },
 
   async getOrdersForUser(userId: string) {
     return Order.find({ user: userId })
-      .populate('items.food', 'name image category')
+      .populate("items.food", "name image category")
       .sort({ createdAt: -1 });
   },
 
   async getAllOrders() {
     return Order.find()
-      .populate('user', 'name email')
-      .populate('items.food', 'name image category')
+      .populate("user", "name email")
+      .populate("items.food", "name image category")
       .sort({ createdAt: -1 });
   },
 
   async getById(id: string) {
     return Order.findById(id)
-      .populate('user', 'name email')
-      .populate('items.food', 'name image category');
+      .populate("user", "name email")
+      .populate("items.food", "name image category");
   },
 
   async updateOrderStatus(id: string, status: string) {
     const allowedStatuses = [
-      'pending',
-      'confirmed',
-      'preparing',
-      'out-for-delivery',
-      'delivered',
-      'cancelled',
+      "pending",
+      "confirmed",
+      "preparing",
+      "out-for-delivery",
+      "delivered",
+      "cancelled",
     ];
 
     if (!allowedStatuses.includes(status)) {
       const err: any = new Error(
-        `Invalid order status. Allowed values: ${allowedStatuses.join(', ')}`
+        `Invalid order status. Allowed values: ${allowedStatuses.join(", ")}`,
       );
       err.status = 400;
       throw err;
@@ -139,13 +137,13 @@ export const orderService = {
       {
         new: true,
         runValidators: true,
-      }
+      },
     )
-      .populate('user', 'name email')
-      .populate('items.food', 'name image category');
+      .populate("user", "name email")
+      .populate("items.food", "name image category");
 
     if (!order) {
-      const err: any = new Error('Order not found');
+      const err: any = new Error("Order not found");
       err.status = 404;
       throw err;
     }
@@ -153,41 +151,83 @@ export const orderService = {
     return order;
   },
   async findByPaymentMetadata(
-  userId: string,
-  totalAmount: number,
-  foodIds: string[]
-) {
-  const orders = await Order.find({
-    user: userId,
-    totalAmount,
-    paymentStatus: 'pending',
-    'items.food': { $in: foodIds },
-  })
-    .sort({ createdAt: -1 })
-    .limit(1);
+    userId: string,
+    totalAmount: number,
+    foodIds: string[],
+  ) {
+    const orders = await Order.find({
+      user: userId,
+      totalAmount,
+      paymentStatus: "pending",
+      "items.food": { $in: foodIds },
+    })
+      .sort({ createdAt: -1 })
+      .limit(1);
 
-  return orders[0] || null;
-},
+    return orders[0] || null;
+  },
 
-async markOrderAsPaid(orderId: string, paymentId: string) {
-  const order = await Order.findByIdAndUpdate(
-    orderId,
-    {
-      paymentStatus: 'paid',
-      paymentId,
-    },
-    {
-      new: true,
-      runValidators: true,
+  async markOrderAsPaid(orderId: string, paymentId: string) {
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        paymentStatus: "paid",
+        paymentId,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!order) {
+      const err: any = new Error("Order not found");
+      err.status = 404;
+      throw err;
     }
-  );
 
-  if (!order) {
-    const err: any = new Error('Order not found');
-    err.status = 404;
-    throw err;
-  }
+    return order;
+  },
+  async getDashboardStats() {
+    const totalOrdersResult = await Order.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      { $count: "total" },
+    ]);
 
-  return order;
-},
+    const totalOrders = totalOrdersResult[0]?.total || 0;
+
+    const revenueResult = await Order.aggregate([
+      { $match: { isDeleted: { $ne: true }, paymentStatus: "paid" } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+
+    const totalRevenue = revenueResult[0]?.total || 0;
+
+    const pendingOrdersResult = await Order.aggregate([
+      { $match: { isDeleted: { $ne: true }, status: "pending" } },
+      { $count: "total" },
+    ]);
+
+    const pendingOrders = pendingOrdersResult[0]?.total || 0;
+
+    const recentOrders = await Order.find({
+      isDeleted: { $ne: true },
+    })
+      .populate("user", "name email")
+      .populate("items.food", "name image")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    return {
+      totalOrders,
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      pendingOrders,
+      recentOrders,
+    };
+  },
 };
