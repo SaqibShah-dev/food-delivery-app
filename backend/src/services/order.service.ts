@@ -100,8 +100,61 @@ export const orderService = {
       .sort({ createdAt: -1 });
   },
 
-  async getAllOrders() {
-    return Order.find()
+  async getAllOrders(options: {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const query: any = { isDeleted: { $ne: true } };
+
+    if (options.status) {
+      const allowedStatuses = [
+        "pending",
+        "confirmed",
+        "preparing",
+        "out-for-delivery",
+        "delivered",
+        "cancelled",
+      ];
+
+      if (!allowedStatuses.includes(options.status)) {
+        const err: any = new Error(
+          `Invalid status. Allowed values: ${allowedStatuses.join(", ")}`,
+        );
+        err.status = 400;
+        throw err;
+      }
+
+      query.status = options.status;
+    }
+
+    if (options.startDate || options.endDate) {
+      query.createdAt = {};
+
+      if (options.startDate) {
+        const start = new Date(options.startDate);
+        if (isNaN(start.getTime())) {
+          const err: any = new Error("Invalid startDate format");
+          err.status = 400;
+          throw err;
+        }
+        query.createdAt.$gte = start;
+      }
+
+      if (options.endDate) {
+        const end = new Date(options.endDate);
+        if (isNaN(end.getTime())) {
+          const err: any = new Error("Invalid endDate format");
+          err.status = 400;
+          throw err;
+        }
+        // Include the entire end date (set to end of day)
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    return Order.find(query)
       .populate("user", "name email")
       .populate("items.food", "name image category")
       .sort({ createdAt: -1 });

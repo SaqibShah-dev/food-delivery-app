@@ -24,11 +24,23 @@ export const getMyOrders = asyncHandler(
   },
 );
 
-export const getAll = asyncHandler(async (_req: AuthRequest, res: Response) => {
-  const orders = await orderService.getAllOrders();
+export const getAll = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { status, startDate, endDate } = req.query as {
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    };
 
-  res.json(apiResponse(orders, "All orders"));
-});
+    const orders = await orderService.getAllOrders({
+      status,
+      startDate,
+      endDate,
+    });
+
+    res.json(apiResponse(orders, 'All orders'));
+  }
+);
 
 export const updateStatus = asyncHandler(
   async (req: AuthRequest, res: Response) => {
