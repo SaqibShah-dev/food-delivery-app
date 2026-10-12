@@ -16,6 +16,7 @@ import {
   updateStatus,
   getDashboardStats,
   getPopularFood,
+  getRevenueByCategory,
 } from '../controllers/order.controller.js';
 
 const router = express.Router();
@@ -27,6 +28,9 @@ router.get('/my', protect, getMyOrders);
 
 // Admin: popular food items analytics
 router.get('/admin/popular-food', protect, adminOnly, getPopularFood);
+
+// Admin: revenue by category analytics
+router.get('/admin/revenue-by-category', protect, adminOnly, getRevenueByCategory);
 
 // Admin list of every order
 router.get('/admin/stats', protect, adminOnly, getDashboardStats);

@@ -115,3 +115,12 @@ export const getPopularFood = asyncHandler(
     );
   }
 );
+export const getRevenueByCategory = asyncHandler(
+  async (_req: AuthRequest, res: Response) => {
+    const revenueData = await orderService.getRevenueByCategory();
+
+    res.json(
+      apiResponse(revenueData, 'Revenue by category retrieved')
+    );
+  }
+);

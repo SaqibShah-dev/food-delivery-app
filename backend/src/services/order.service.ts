@@ -340,4 +340,55 @@ export const orderService = {
       totalRevenue: Number(item.totalRevenue.toFixed(2)),
     }));
   },
+  async getRevenueByCategory() {
+  const results = await Order.aggregate([
+    // Only non-deleted orders
+    { $match: { isDeleted: { $ne: true } } },
+
+    // Deconstruct items array
+    { $unwind: '$items' },
+
+    // Join with FoodItem to get category
+    {
+      $lookup: {
+        from: 'fooditems',
+        localField: 'items.food',
+        foreignField: '_id',
+        as: 'foodDetails',
+      },
+    },
+
+    // Flatten the joined food data
+    { $unwind: '$foodDetails' },
+
+    // Group by category
+    {
+      $group: {
+        _id: '$foodDetails.category',
+        totalRevenue: { $sum: '$items.subtotal' },
+        totalQuantity: { $sum: '$items.quantity' },
+        orderCount: { $sum: 1 },
+      },
+    },
+
+    // Sort by revenue, descending
+    { $sort: { totalRevenue: -1 } },
+
+    // Shape output
+    {
+      $project: {
+        _id: 0,
+        category: '$_id',
+        totalRevenue: 1,
+        totalQuantity: 1,
+        orderCount: 1,
+      },
+    },
+  ]);
+
+  return results.map((item) => ({
+    ...item,
+    totalRevenue: Number(item.totalRevenue.toFixed(2)),
+  }));
+},
 };
