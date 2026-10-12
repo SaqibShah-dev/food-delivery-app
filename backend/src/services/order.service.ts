@@ -283,4 +283,61 @@ export const orderService = {
       recentOrders,
     };
   },
+  async getPopularFoodItems(limit: number = 10) {
+    const results = await Order.aggregate([
+      // Only non-deleted orders
+      { $match: { isDeleted: { $ne: true } } },
+
+      // Deconstruct items array into separate documents
+      { $unwind: "$items" },
+
+      // Group by food item
+      {
+        $group: {
+          _id: "$items.food",
+          totalQuantity: { $sum: "$items.quantity" },
+          totalRevenue: { $sum: "$items.subtotal" },
+          orderCount: { $sum: 1 },
+        },
+      },
+
+      // Sort by total quantity sold, descending
+      { $sort: { totalQuantity: -1 } },
+
+      // Limit results
+      { $limit: limit },
+
+      // Join with FoodItem collection to get name/image
+      {
+        $lookup: {
+          from: "fooditems",
+          localField: "_id",
+          foreignField: "_id",
+          as: "food",
+        },
+      },
+
+      // Flatten the joined food data
+      { $unwind: "$food" },
+
+      // Shape the output
+      {
+        $project: {
+          _id: 0,
+          foodId: "$_id",
+          name: "$food.name",
+          image: "$food.image",
+          category: "$food.category",
+          totalQuantity: 1,
+          totalRevenue: 1,
+          orderCount: 1,
+        },
+      },
+    ]);
+
+    return results.map((item) => ({
+      ...item,
+      totalRevenue: Number(item.totalRevenue.toFixed(2)),
+    }));
+  },
 };

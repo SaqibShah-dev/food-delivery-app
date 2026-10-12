@@ -97,3 +97,21 @@ export const getDashboardStats = asyncHandler(
     res.json(apiResponse(stats, "Dashboard statistics retrieved"));
   },
 );
+
+export const getPopularFood = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const limit = Number(req.query.limit) || 10;
+
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+      const err: any = new Error('Limit must be an integer between 1 and 50');
+      err.status = 400;
+      throw err;
+    }
+
+    const popularItems = await orderService.getPopularFoodItems(limit);
+
+    res.json(
+      apiResponse(popularItems, 'Popular food items retrieved')
+    );
+  }
+);
