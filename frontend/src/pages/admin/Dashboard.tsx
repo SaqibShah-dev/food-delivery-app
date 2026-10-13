@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -11,14 +11,14 @@ import {
   Pie,
   Cell,
   Legend,
-} from 'recharts';
+} from "recharts";
 import {
   getDashboardStats,
   getPopularFood,
   getRevenueByCategory,
-} from '../../api/admin';
+} from "../../api/admin";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
 
 type Stats = {
   totalOrders: number;
@@ -45,7 +45,9 @@ type RevenueCategory = {
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [popularFood, setPopularFood] = useState<PopularFood[]>([]);
-  const [revenueByCategory, setRevenueByCategory] = useState<RevenueCategory[]>([]);
+  const [revenueByCategory, setRevenueByCategory] = useState<RevenueCategory[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +64,7 @@ export default function Dashboard() {
         setPopularFood(popularRes.data);
         setRevenueByCategory(revenueRes.data);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to load dashboard');
+        setError(err.response?.data?.message || "Failed to load dashboard");
       } finally {
         setLoading(false);
       }
@@ -89,7 +91,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -99,7 +101,9 @@ export default function Dashboard() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-500">Total Revenue</h3>
-          <p className="text-3xl font-bold">${stats?.totalRevenue.toFixed(2)}</p>
+          <p className="text-3xl font-bold">
+            ${stats?.totalRevenue.toFixed(2)}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-500">Pending Orders</h3>
@@ -111,7 +115,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Popular food bar chart */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Top 5 Popular Food Items</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Top 5 Popular Food Items
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={popularFood}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -139,7 +145,10 @@ export default function Dashboard() {
                 label
               >
                 {revenueByCategory.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -165,7 +174,7 @@ export default function Dashboard() {
           <tbody className="divide-y divide-gray-200">
             {stats?.recentOrders.map((order) => (
               <tr key={order._id}>
-                <td className="px-4 py-2">{order.user?.name || 'Unknown'}</td>
+                <td className="px-4 py-2">{order.user?.name || "Unknown"}</td>
                 <td className="px-4 py-2">${order.totalAmount.toFixed(2)}</td>
                 <td className="px-4 py-2">{order.status}</td>
                 <td className="px-4 py-2">{order.paymentStatus}</td>

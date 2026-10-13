@@ -39,3 +39,11 @@ export const getAllOrders = (filters?: {
   endDate?: string;
 }) =>
   adminApi.get('/orders', { params: filters }).then((res) => res.data);
+
+  export const updateOrderStatus = (
+  orderId: string,
+  status: string
+) =>
+  adminApi
+    .patch(`/orders/${orderId}/status`, { status })
+    .then((res) => res.data);
