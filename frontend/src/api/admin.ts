@@ -1,4 +1,13 @@
 import axios from 'axios';
+import type {
+  IApiResponse,
+  IDashboardStats,
+  IOrder,
+  IOrderFilters,
+  IPopularFood,
+  IRevenueCategory,
+  OrderStatus,
+} from '../types';
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
@@ -7,7 +16,6 @@ const adminApi = axios.create({
   baseURL: API_BASE,
 });
 
-// Attach the current JWT before every request.
 adminApi.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
 
@@ -18,32 +26,52 @@ adminApi.interceptors.request.use((config) => {
   return config;
 });
 
-export const getDashboardStats = () =>
-  adminApi.get('/orders/admin/stats').then((res) => res.data);
+export const getDashboardStats = async () => {
+  const response = await adminApi.get<IApiResponse<IDashboardStats>>(
+    '/orders/admin/stats'
+  );
 
-export const getPopularFood = (limit = 10) =>
-  adminApi
-    .get('/orders/admin/popular-food', {
+  return response.data;
+};
+
+export const getPopularFood = async (limit = 10) => {
+  const response = await adminApi.get<IApiResponse<IPopularFood[]>>(
+    '/orders/admin/popular-food',
+    {
       params: { limit },
-    })
-    .then((res) => res.data);
+    }
+  );
 
-export const getRevenueByCategory = () =>
-  adminApi
-    .get('/orders/admin/revenue-by-category')
-    .then((res) => res.data);
+  return response.data;
+};
 
-export const getAllOrders = (filters?: {
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-}) =>
-  adminApi.get('/orders', { params: filters }).then((res) => res.data);
+export const getRevenueByCategory = async () => {
+  const response = await adminApi.get<IApiResponse<IRevenueCategory[]>>(
+    '/orders/admin/revenue-by-category'
+  );
 
-  export const updateOrderStatus = (
+  return response.data;
+};
+
+export const getAllOrders = async (filters?: IOrderFilters) => {
+  const response = await adminApi.get<IApiResponse<IOrder[]>>(
+    '/orders',
+    {
+      params: filters,
+    }
+  );
+
+  return response.data;
+};
+
+export const updateOrderStatus = async (
   orderId: string,
-  status: string
-) =>
-  adminApi
-    .patch(`/orders/${orderId}/status`, { status })
-    .then((res) => res.data);
+  status: OrderStatus
+) => {
+  const response = await adminApi.patch<IApiResponse<IOrder>>(
+    `/orders/${orderId}/status`,
+    { status }
+  );
+
+  return response.data;
+};
