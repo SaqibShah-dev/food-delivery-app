@@ -29,8 +29,12 @@ app.use(
 // Reject JSON bodies larger than 100 KB
 app.use(express.json({ limit: '100kb' }));
 
-// Serve locally uploaded food images
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Uploaded food images are public assets that the frontend can embed.
+app.use(
+  '/uploads',
+  helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }),
+  express.static(path.join(__dirname, '../uploads'))
+);
 
 // Rate-limit all API requests, then register API routes
 app.use('/api', apiLimiter, routes);
