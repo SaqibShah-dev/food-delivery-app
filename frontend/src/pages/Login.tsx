@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
 
@@ -22,15 +22,16 @@ export default function Login() {
 
   const requestedPath = routeState?.from;
 
-  const destination =
-    typeof requestedPath === "string" && requestedPath.startsWith("/admin/")
+  const adminDestination =
+    typeof requestedPath === "string" &&
+    requestedPath.startsWith("/admin/")
       ? requestedPath
       : "/admin/dashboard";
 
   if (user) {
     return (
       <Navigate
-        to={user.role === "admin" ? destination : "/access-denied"}
+        to={user.role === "admin" ? adminDestination : "/"}
         replace
       />
     );
@@ -52,13 +53,17 @@ export default function Login() {
         password,
       });
 
-      navigate(loggedInUser.role === "admin" ? destination : "/access-denied", {
-        replace: true,
-      });
+      navigate(
+        loggedInUser.role === "admin" ? adminDestination : "/",
+        {
+          replace: true,
+        }
+      );
     } catch (err: unknown) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
         setError(
-          err.response?.data?.message || "Unable to log in. Please try again.",
+          err.response?.data?.message ||
+            "Unable to log in. Please try again."
         );
       } else {
         setError("Something went wrong. Please try again.");
@@ -72,14 +77,17 @@ export default function Login() {
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-12">
       <section className="w-full max-w-md rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-indigo-600">FoodFlow</p>
+          <p className="text-sm font-semibold text-indigo-600">
+            FoodFlow
+          </p>
 
           <h1 className="mt-2 text-3xl font-bold text-slate-900">
             Welcome back
           </h1>
 
           <p className="mt-2 text-sm text-slate-600">
-            Sign in to manage your menu and customer orders.
+            Sign in to browse the menu, manage food, and handle
+            customer orders.
           </p>
         </div>
 
@@ -135,6 +143,13 @@ export default function Login() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <Link
+          to="/"
+          className="mt-5 block text-center text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        >
+          Back to menu
+        </Link>
       </section>
     </main>
   );
