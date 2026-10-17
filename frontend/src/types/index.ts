@@ -119,3 +119,22 @@ export interface IFoodFormValues {
   price: string;
   category: string;
 }
+
+export type UserRole = 'user' | 'admin';
+
+export interface IAuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface ILoginInput {
+  email: string;
+  password: string;
+}
+
+export interface IAuthData {
+  token: string;
+  user: IAuthUser;
+}

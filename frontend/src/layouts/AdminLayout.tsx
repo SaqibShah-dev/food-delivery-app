@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 type NavItemProps = {
   to: string;
@@ -15,11 +16,11 @@ function NavItem({ to, label, icon, onNavigate }: NavItemProps) {
       onClick={onNavigate}
       className={({ isActive }) =>
         [
-          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
           isActive
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'text-slate-300 hover:bg-slate-800 hover:text-white',
-        ].join(' ')
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "text-slate-300 hover:bg-slate-800 hover:text-white",
+        ].join(" ")
       }
     >
       {icon}
@@ -110,10 +111,12 @@ function CloseIcon() {
 }
 
 export default function AdminLayout() {
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  // Keep the rest of your layout here.
   const navigation = (
     <>
       <div className="flex h-16 items-center justify-between border-b border-slate-800 px-5">
@@ -185,9 +188,9 @@ export default function AdminLayout() {
 
       <aside
         className={[
-          'fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-slate-900 shadow-xl transition-transform duration-200 lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        ].join(' ')}
+          "fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-slate-900 shadow-xl transition-transform duration-200 lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
       >
         {navigation}
       </aside>
@@ -204,20 +207,16 @@ export default function AdminLayout() {
           </button>
 
           <div className="hidden lg:block">
-            <p className="text-sm font-medium text-slate-900">
-              FoodFlow Administration
-            </p>
-            <p className="text-xs text-slate-500">
-              Monitor orders and manage your menu
-            </p>
+            <div className="rounded-lg bg-slate-800/70 p-3">
+              <p className="text-sm font-medium text-white">Administrator</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Manage food and customer orders
+              </p>
+            </div>
           </div>
-
           <button
             type="button"
-            onClick={() => {
-              localStorage.removeItem('token');
-              window.location.href = '/';
-            }}
+            onClick={logout}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             Log out

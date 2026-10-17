@@ -1,25 +1,9 @@
-import axios from 'axios';
+import { api as foodApi, API_BASE } from './client';
+
 import type {
   IApiResponse,
   IFoodItem,
 } from '../types';
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-const foodApi = axios.create({
-  baseURL: API_BASE,
-});
-
-foodApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export function getFoodImageUrl(image: string): string {
   const apiUrl = new URL(API_BASE, window.location.origin);

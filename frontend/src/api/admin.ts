@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api as adminApi } from './client';
 import type {
   IApiResponse,
   IDashboardStats,
@@ -8,23 +8,6 @@ import type {
   IRevenueCategory,
   OrderStatus,
 } from '../types';
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-const adminApi = axios.create({
-  baseURL: API_BASE,
-});
-
-adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const getDashboardStats = async () => {
   const response = await adminApi.get<IApiResponse<IDashboardStats>>(
