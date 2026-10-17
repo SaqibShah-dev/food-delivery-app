@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-
+import Menu from './pages/Menu';
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
@@ -51,7 +51,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          <Route path="/login" element={<Login />} />
+          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/" element={<Menu />} />
 
           <Route path="/access-denied" element={<AccessDeniedRoute />} />
 

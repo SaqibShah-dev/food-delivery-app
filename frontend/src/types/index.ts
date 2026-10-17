@@ -138,3 +138,24 @@ export interface IAuthData {
   token: string;
   user: IAuthUser;
 }
+
+export interface IPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface IFoodMenuResponse {
+  items: IFoodItem[];
+  pagination: IPagination;
+}
+
+export interface IFoodMenuFilters {
+  page?: number;
+  limit?: number;
+  category?: string;
+  search?: string;
+}

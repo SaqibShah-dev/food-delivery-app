@@ -3,6 +3,8 @@ import { api as foodApi, API_BASE } from './client';
 import type {
   IApiResponse,
   IFoodItem,
+  IFoodMenuFilters,
+  IFoodMenuResponse,
 } from '../types';
 
 export function getFoodImageUrl(image: string): string {
@@ -51,6 +53,31 @@ export async function hideFoodItem(foodId: string) {
 export async function restoreFoodItem(foodId: string) {
   const response = await foodApi.patch<IApiResponse<IFoodItem>>(
     `/food/${foodId}/restore`
+  );
+
+  return response.data;
+}
+
+export async function getAvailableFoodItems(
+  filters: IFoodMenuFilters = {},
+  signal?: AbortSignal
+) {
+  const response = await foodApi.get<
+    IApiResponse<IFoodMenuResponse>
+  >('/food', {
+    params: filters,
+    signal,
+  });
+
+  return response.data;
+}
+
+export async function getAvailableFoodCategories(
+  signal?: AbortSignal
+) {
+  const response = await foodApi.get<IApiResponse<string[]>>(
+    '/food/categories',
+    { signal }
   );
 
   return response.data;
