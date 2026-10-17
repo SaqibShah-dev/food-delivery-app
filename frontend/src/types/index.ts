@@ -101,3 +101,21 @@ export interface IRevenueCategory {
   totalQuantity: number;
   orderCount: number;
 }
+export interface IFoodItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  isAvailable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IFoodFormValues {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+}
