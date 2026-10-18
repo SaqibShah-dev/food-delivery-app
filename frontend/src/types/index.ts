@@ -159,3 +159,8 @@ export interface IFoodMenuFilters {
   category?: string;
   search?: string;
 }
+
+export interface ICartItem {
+  food: IFoodItem;
+  quantity: number;
+}

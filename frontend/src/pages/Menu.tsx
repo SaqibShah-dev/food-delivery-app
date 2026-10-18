@@ -1,33 +1,27 @@
-import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import AddToCartButton from "../components/AddToCartButton";
+import { useCart } from "../hooks/useCart";
 import {
   getAvailableFoodCategories,
   getAvailableFoodItems,
   getFoodImageUrl,
-} from '../api/food';
+} from "../api/food";
 
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
 
-import type {
-  IFoodItem,
-  IFoodMenuFilters,
-  IPagination,
-} from '../types';
+import type { IFoodItem, IFoodMenuFilters, IPagination } from "../types";
 
 const PAGE_SIZE = 9;
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
 });
 
-function getErrorMessage(
-  error: unknown,
-  fallback: string
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error)) {
     return error.response?.data?.message || error.message || fallback;
   }
@@ -37,21 +31,20 @@ function getErrorMessage(
 
 export default function Menu() {
   const { user, logout } = useAuth();
+  const { totalItems } = useCart();
 
   const [items, setItems] = useState<IFoodItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [pagination, setPagination] =
-    useState<IPagination | null>(null);
+  const [pagination, setPagination] = useState<IPagination | null>(null);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categoryError, setCategoryError] =
-    useState<string | null>(null);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const [retryCount, setRetryCount] = useState(0);
 
@@ -62,18 +55,14 @@ export default function Menu() {
 
     const loadCategories = async () => {
       try {
-        const response = await getAvailableFoodCategories(
-          controller.signal
-        );
+        const response = await getAvailableFoodCategories(controller.signal);
 
         if (!controller.signal.aborted) {
           setCategories(response.data);
         }
       } catch (err: unknown) {
         if (!controller.signal.aborted) {
-          setCategoryError(
-            getErrorMessage(err, 'Unable to load categories.')
-          );
+          setCategoryError(getErrorMessage(err, "Unable to load categories."));
         }
       }
     };
@@ -109,7 +98,7 @@ export default function Menu() {
       try {
         const response = await getAvailableFoodItems(
           filters,
-          controller.signal
+          controller.signal,
         );
 
         if (controller.signal.aborted) {
@@ -120,9 +109,7 @@ export default function Menu() {
         setPagination(response.data.pagination);
       } catch (err: unknown) {
         if (!controller.signal.aborted) {
-          setError(
-            getErrorMessage(err, 'Unable to load the menu.')
-          );
+          setError(getErrorMessage(err, "Unable to load the menu."));
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -151,9 +138,9 @@ export default function Menu() {
   };
 
   const handleClearFilters = () => {
-    setSearchInput('');
-    setSearch('');
-    setCategory('');
+    setSearchInput("");
+    setSearch("");
+    setCategory("");
     setPage(1);
   };
 
@@ -168,18 +155,29 @@ export default function Menu() {
           >
             FoodFlow
           </Link>
-
           <nav
             aria-label="Customer navigation"
             className="flex flex-wrap items-center justify-end gap-3"
           >
+            <Link
+              to="/cart"
+              className="relative rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cart
+              {totalItems > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-xs font-bold text-white">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+
             {user ? (
               <>
                 <span className="hidden text-sm text-slate-600 sm:inline">
                   Hello, {user.name}
                 </span>
 
-                {user.role === 'admin' && (
+                {user.role === "admin" && (
                   <Link
                     to="/admin/dashboard"
                     className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
@@ -220,8 +218,8 @@ export default function Menu() {
           </h1>
 
           <p className="mt-4 max-w-xl text-sm leading-6 text-indigo-100">
-            Explore our menu and discover food for every craving.
-            Search for a dish or browse by category.
+            Explore our menu and discover food for every craving. Search for a
+            dish or browse by category.
           </p>
         </section>
 
@@ -238,9 +236,7 @@ export default function Menu() {
             id="menu-search"
             type="search"
             value={searchInput}
-            onChange={(event) =>
-              setSearchInput(event.target.value)
-            }
+            onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search pizza, chicken, drinks..."
             className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
           />
@@ -268,12 +264,12 @@ export default function Menu() {
           <div className="mb-6 flex flex-wrap gap-2">
             <button
               type="button"
-              aria-pressed={category === ''}
-              onClick={() => handleCategoryChange('')}
+              aria-pressed={category === ""}
+              onClick={() => handleCategoryChange("")}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                category === ''
-                  ? 'bg-indigo-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                category === ""
+                  ? "bg-indigo-600 text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
               }`}
             >
               All food
@@ -287,8 +283,8 @@ export default function Menu() {
                 onClick={() => handleCategoryChange(item)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   category === item
-                    ? 'bg-indigo-600 text-white'
-                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                    ? "bg-indigo-600 text-white"
+                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 {item}
@@ -297,12 +293,9 @@ export default function Menu() {
           </div>
 
           {categoryError && (
-            <p
-              role="status"
-              className="mb-5 text-sm text-amber-700"
-            >
-              Categories could not be loaded. You can still
-              browse or search the menu.
+            <p role="status" className="mb-5 text-sm text-amber-700">
+              Categories could not be loaded. You can still browse or search the
+              menu.
             </p>
           )}
         </section>
@@ -310,18 +303,15 @@ export default function Menu() {
         {/* Results */}
         <section aria-labelledby="menu-heading">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2
-              id="menu-heading"
-              className="text-2xl font-bold tracking-tight"
-            >
-              {category || 'Our menu'}
+            <h2 id="menu-heading" className="text-2xl font-bold tracking-tight">
+              {category || "Our menu"}
             </h2>
 
             {!loading && !error && pagination && (
               <p className="text-sm text-slate-500">
-                {pagination.totalItems}{' '}
-                {pagination.totalItems === 1 ? 'item' : 'items'}
-                {search ? ` matching "${search}"` : ''}
+                {pagination.totalItems}{" "}
+                {pagination.totalItems === 1 ? "item" : "items"}
+                {search ? ` matching "${search}"` : ""}
               </p>
             )}
           </div>
@@ -342,9 +332,7 @@ export default function Menu() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setRetryCount((current) => current + 1)
-                }
+                onClick={() => setRetryCount((current) => current + 1)}
                 className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800"
               >
                 Try again
@@ -352,9 +340,7 @@ export default function Menu() {
             </div>
           ) : items.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white px-6 py-16 text-center">
-              <h3 className="text-lg font-semibold">
-                No food found
-              </h3>
+              <h3 className="text-lg font-semibold">No food found</h3>
 
               <p className="mt-2 text-sm text-slate-500">
                 Try another search or choose a different category.
@@ -399,17 +385,22 @@ export default function Menu() {
                       {item.category}
                     </span>
 
-                    <h3 className="mt-3 text-lg font-bold">
-                      {item.name}
-                    </h3>
+                    <h3 className="mt-3 text-lg font-bold">{item.name}</h3>
 
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {item.description}
                     </p>
 
-                    <p className="mt-5 text-xl font-bold text-indigo-600">
-                      {currencyFormatter.format(item.price)}
-                    </p>
+                    <div className="mt-5 flex items-center justify-between gap-4">
+                      <p className="text-xl font-bold text-indigo-600">
+                        {currencyFormatter.format(item.price)}
+                      </p>
+
+                      <AddToCartButton
+                        food={item}
+                        className="w-auto min-w-36"
+                      />
+                    </div>
                   </div>
                 </article>
               ))}
@@ -429,27 +420,20 @@ export default function Menu() {
                 <button
                   type="button"
                   disabled={!pagination.hasPreviousPage}
-                  onClick={() =>
-                    setPage((current) => Math.max(1, current - 1))
-                  }
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
                   className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Previous
                 </button>
 
-                <p
-                  aria-live="polite"
-                  className="text-sm text-slate-600"
-                >
+                <p aria-live="polite" className="text-sm text-slate-600">
                   Page {pagination.page} of {pagination.totalPages}
                 </p>
 
                 <button
                   type="button"
                   disabled={!pagination.hasNextPage}
-                  onClick={() =>
-                    setPage((current) => current + 1)
-                  }
+                  onClick={() => setPage((current) => current + 1)}
                   className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Next

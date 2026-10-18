@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
 import Food from "./pages/admin/Food";
+import Cart from './pages/Cart';
 
 function AccessDenied() {
   const { logout } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/" element={<Menu />} />
 
           <Route path="/login" element={<Login />} />
+          <Route path="/cart" element={<Cart />} />
 
           <Route path="/access-denied" element={<AccessDeniedRoute />} />
 
