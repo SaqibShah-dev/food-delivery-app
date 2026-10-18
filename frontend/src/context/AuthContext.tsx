@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -37,7 +38,6 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
-    // Remove the token used by the earlier manual-testing setup.
     localStorage.removeItem('token');
 
     setUnauthorizedHandler(logout);
@@ -47,19 +47,29 @@ export function AuthProvider({
     };
   }, [logout]);
 
-  const login = async (
-    credentials: ILoginInput
-  ): Promise<IAuthUser> => {
-    const result = await loginUser(credentials);
+  const login = useCallback(
+    async (credentials: ILoginInput): Promise<IAuthUser> => {
+      const result = await loginUser(credentials);
 
-    setAccessToken(result.token);
-    setUser(result.user);
+      setAccessToken(result.token);
+      setUser(result.user);
 
-    return result.user;
-  };
+      return result.user;
+    },
+    []
+  );
+
+  const value = useMemo(
+    () => ({
+      user,
+      login,
+      logout,
+    }),
+    [user, login, logout]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import Menu from './pages/Menu';
+import Menu from "./pages/Menu";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
@@ -41,18 +41,21 @@ function AccessDenied() {
 function AccessDeniedRoute() {
   const { user } = useAuth();
 
-  return user ? <AccessDenied /> : <Navigate to="/login" replace />;
+  return user ? (
+    <AccessDenied />
+  ) : (
+    <Navigate to="/login" replace />
+  );
 }
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-
-          {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/" element={<Menu />} />
+
+          <Route path="/login" element={<Login />} />
 
           <Route path="/access-denied" element={<AccessDeniedRoute />} />
 
@@ -74,5 +77,3 @@ function App() {
     </BrowserRouter>
   );
 }
-
-export default App;
