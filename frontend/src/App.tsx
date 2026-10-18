@@ -10,7 +10,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
 import Food from "./pages/admin/Food";
-import Cart from './pages/Cart';
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 function AccessDenied() {
   const { logout } = useAuth();
@@ -42,11 +44,7 @@ function AccessDenied() {
 function AccessDeniedRoute() {
   const { user } = useAuth();
 
-  return user ? (
-    <AccessDenied />
-  ) : (
-    <Navigate to="/login" replace />
-  );
+  return user ? <AccessDenied /> : <Navigate to="/login" replace />;
 }
 
 export default function App() {
@@ -58,6 +56,9 @@ export default function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
 
           <Route path="/access-denied" element={<AccessDeniedRoute />} />
 

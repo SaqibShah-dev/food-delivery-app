@@ -164,3 +164,35 @@ export interface ICartItem {
   food: IFoodItem;
   quantity: number;
 }
+
+export interface IOrderAddress {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  country: string;
+}
+
+export interface ICreateOrderInput {
+  items: {
+    foodId: string;
+    quantity: number;
+  }[];
+  address: IOrderAddress;
+}
+
+export interface IOrderApiResponse {
+  _id?: string;
+  user: string;
+  items: {
+    food: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+  }[];
+  totalAmount: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  address: IOrderAddress;
+  createdAt?: string;
+}

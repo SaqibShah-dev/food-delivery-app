@@ -158,13 +158,12 @@ export default function Cart() {
                 </div>
               </dl>
 
-              <button
-                type="button"
-                disabled
-                className="mt-6 w-full cursor-not-allowed rounded-lg bg-slate-300 px-4 py-3 text-sm font-semibold text-slate-600"
+              <Link
+                to="/checkout"
+                className="mt-6 block w-full rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-indigo-700"
               >
-                Checkout coming soon
-              </button>
+                Proceed to checkout
+              </Link>
 
               <p className="mt-3 text-center text-xs text-slate-500">
                 You’ll sign in before placing your order.
