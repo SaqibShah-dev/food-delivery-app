@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { useCart } from "../hooks/useCart";
+import { getFoodImageUrl } from "../api/food";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -65,8 +66,9 @@ export default function Cart() {
                   className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row"
                 >
                   <img
-                    src={food.image}
+                    src={getFoodImageUrl(food.image)}
                     alt={food.name}
+                    loading="lazy"
                     className="h-28 w-full rounded-xl bg-slate-100 object-cover sm:w-36"
                   />
 
