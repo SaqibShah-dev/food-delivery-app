@@ -140,13 +140,15 @@ export default function Login() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
-
-        <Link
-          to="/"
-          className="mt-5 block text-center text-sm font-medium text-indigo-600 hover:text-indigo-800"
-        >
-          Back to menu
-        </Link>
+        <p className="mt-6 text-center text-sm text-slate-600">
+          New to FoodFlow?{" "}
+          <Link
+            to="/register"
+            className="font-semibold text-indigo-600 hover:text-indigo-800"
+          >
+            Create an account
+          </Link>
+        </p>
       </section>
     </main>
   );

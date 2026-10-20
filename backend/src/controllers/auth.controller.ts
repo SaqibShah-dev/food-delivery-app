@@ -5,6 +5,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
+import { User } from '../models/User.model.js';
 
 const generateToken = (user: any) =>
   jwt.sign(

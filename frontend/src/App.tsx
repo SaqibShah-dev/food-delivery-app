@@ -7,6 +7,7 @@ import AdminRoute from "./components/AdminRoute";
 import AdminLayout from "./layouts/AdminLayout";
 
 import Login from "./pages/Login";
+import Register from './pages/Register';
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
 import Food from "./pages/admin/Food";
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/" element={<Menu />} />
 
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
 

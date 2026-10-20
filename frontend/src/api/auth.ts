@@ -23,3 +23,15 @@ export async function getCurrentUser(
 
   return response.data;
 }
+
+export async function registerUser(input: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  const response = await api.post<
+    IApiResponse<IAuthData>
+  >('/auth/register', input);
+
+  return response.data.data;
+}
