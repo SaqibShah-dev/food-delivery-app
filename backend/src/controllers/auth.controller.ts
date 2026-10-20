@@ -70,3 +70,32 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     )
   );
 });
+
+
+export const me = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user!.id).select(
+      '-password'
+    );
+
+    if (!user) {
+      res.status(404).json(
+        apiResponse(null, 'User not found', 404)
+      );
+
+      return;
+    }
+
+    res.json(
+      apiResponse(
+        {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        'Current user'
+      )
+    );
+  }
+);

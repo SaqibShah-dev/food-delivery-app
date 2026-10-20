@@ -1,8 +1,8 @@
 import { api } from './client';
-
 import type {
   IApiResponse,
   IAuthData,
+  IAuthUser,
   ILoginInput,
 } from '../types';
 
@@ -13,4 +13,13 @@ export async function loginUser(credentials: ILoginInput) {
   );
 
   return response.data.data;
+}
+export async function getCurrentUser(
+  signal?: AbortSignal
+) {
+  const response = await api.get<
+    IApiResponse<IAuthUser>
+  >('/auth/me', { signal });
+
+  return response.data;
 }
