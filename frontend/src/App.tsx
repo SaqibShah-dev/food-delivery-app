@@ -8,8 +8,10 @@ import AdminLayout from "./layouts/AdminLayout";
 
 import Login from "./pages/Login";
 import Register from './pages/Register';
+
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
+import MyOrders from './pages/MyOrders';
 import Food from "./pages/admin/Food";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -58,6 +60,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/orders" element={<MyOrders />} />
           <Route path="/checkout" element={<Checkout />} />
 
           <Route path="/order-confirmation" element={<OrderConfirmation />} />

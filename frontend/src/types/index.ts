@@ -196,3 +196,30 @@ export interface IOrderApiResponse {
   address: IOrderAddress;
   createdAt?: string;
 }
+export interface IPopulatedOrderItem {
+  food: {
+    _id: string;
+    name: string;
+    image: string;
+    category: string;
+  };
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface IPopulatedOrder {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  items: IPopulatedOrderItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  address: IOrderAddress;
+  createdAt: string;
+  updatedAt: string;
+}

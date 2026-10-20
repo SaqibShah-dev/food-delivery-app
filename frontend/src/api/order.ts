@@ -1,11 +1,9 @@
-import axios from "axios";
-
 import { api } from "./client";
-
 import type {
   IApiResponse,
   ICreateOrderInput,
   IOrderApiResponse,
+  IPopulatedOrder,
 } from "../types";
 
 export async function createOrder(
@@ -22,7 +20,7 @@ export async function createOrder(
 }
 
 export async function getMyOrders(signal?: AbortSignal) {
-  const response = await api.get<IApiResponse<IOrderApiResponse[]>>(
+  const response = await api.get<IApiResponse<IPopulatedOrder[]>>(
     "/orders/my",
     { signal },
   );

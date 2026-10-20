@@ -185,6 +185,12 @@ export default function Menu() {
                     Admin panel
                   </Link>
                 )}
+                <Link
+                  to="/orders"
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  My orders
+                </Link>
 
                 <button
                   type="button"
