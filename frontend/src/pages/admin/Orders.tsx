@@ -1,45 +1,57 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import axios from "axios";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
-import { getAllOrders, updateOrderStatus } from "../../api/admin";
+import OrderDetailsModal from '../admin/OrderDetailsModal';
 
-import { ORDER_STATUSES } from "../../types";
+import {
+  getAllOrders,
+  updateOrderStatus,
+} from '../../api/admin';
+
+import { ORDER_STATUSES } from '../../types';
 
 import type {
   IOrder,
   IOrderFilters,
   OrderStatus,
   PaymentStatus,
-} from "../../types";
+} from '../../types';
 
 const statusStyles: Record<OrderStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  preparing: "bg-purple-100 text-purple-800",
-  "out-for-delivery": "bg-orange-100 text-orange-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  preparing: 'bg-purple-100 text-purple-800',
+  'out-for-delivery': 'bg-orange-100 text-orange-800',
+  delivered: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
 };
 
 const paymentStyles: Record<PaymentStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  paid: "bg-green-100 text-green-800",
-  failed: "bg-red-100 text-red-800",
-  refunded: "bg-gray-200 text-gray-800",
+  pending: 'bg-yellow-100 text-yellow-800',
+  paid: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+  refunded: 'bg-gray-200 text-gray-800',
 };
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
 });
 
 function formatStatus(status: string) {
-  return status.replaceAll("-", " ");
+  return status.replaceAll('-', ' ');
 }
 
-function getErrorMessage(error: unknown, fallback: string): string {
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
   if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message || error.message || fallback;
+    return (
+      error.response?.data?.message ||
+      error.message ||
+      fallback
+    );
   }
 
   return error instanceof Error ? error.message : fallback;
@@ -47,43 +59,64 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export default function Orders() {
   const [orders, setOrders] = useState<IOrder[]>([]);
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    OrderStatus | ''
+  >('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const [selectedOrderId, setSelectedOrderId] = useState<
+    string | null
+  >(null);
 
   const [loading, setLoading] = useState(true);
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
 
   const latestRequest = useRef(0);
   const updateInProgress = useRef(false);
   const appliedFilters = useRef<IOrderFilters>({});
 
-  const loadOrders = useCallback(async (filters: IOrderFilters = {}) => {
-    const requestId = ++latestRequest.current;
+  const selectedOrder =
+    orders.find((order) => order._id === selectedOrderId) ??
+    null;
 
-    setLoading(true);
-    setError(null);
+  const handleViewOrder = (orderId: string) => {
+    setSelectedOrderId(orderId);
+  };
 
-    try {
-      const response = await getAllOrders(filters);
+  const loadOrders = useCallback(
+    async (filters: IOrderFilters = {}) => {
+      const requestId = ++latestRequest.current;
 
-      if (requestId !== latestRequest.current) {
-        return;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getAllOrders(filters);
+
+        if (requestId !== latestRequest.current) {
+          return;
+        }
+
+        setOrders(response.data);
+        appliedFilters.current = { ...filters };
+      } catch (err: unknown) {
+        if (requestId === latestRequest.current) {
+          setError(
+            getErrorMessage(err, 'Failed to load orders.')
+          );
+        }
+      } finally {
+        if (requestId === latestRequest.current) {
+          setLoading(false);
+        }
       }
-
-      setOrders(response.data);
-      appliedFilters.current = { ...filters };
-    } catch (err: unknown) {
-      if (requestId === latestRequest.current) {
-        setError(getErrorMessage(err, "Failed to load orders"));
-      }
-    } finally {
-      if (requestId === latestRequest.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     void loadOrders();
@@ -95,7 +128,9 @@ export default function Orders() {
 
   const handleApplyFilters = () => {
     if (startDate && endDate && startDate > endDate) {
-      setError("Start date must be on or before end date.");
+      setError(
+        'Start date must be on or before end date.'
+      );
 
       return;
     }
@@ -118,22 +153,24 @@ export default function Orders() {
   };
 
   const handleClearFilters = () => {
-    setStatusFilter("");
-    setStartDate("");
-    setEndDate("");
+    setStatusFilter('');
+    setStartDate('');
+    setEndDate('');
 
     void loadOrders();
   };
 
   const handleStatusChange = async (
     orderId: string,
-    newStatus: OrderStatus,
+    newStatus: OrderStatus
   ) => {
     if (updateInProgress.current) {
       return;
     }
 
-    const order = orders.find((item) => item._id === orderId);
+    const order = orders.find(
+      (item) => item._id === orderId
+    );
 
     if (!order || order.status === newStatus) {
       return;
@@ -144,45 +181,62 @@ export default function Orders() {
     setError(null);
 
     try {
-      const response = await updateOrderStatus(orderId, newStatus);
+      const response = await updateOrderStatus(
+        orderId,
+        newStatus
+      );
 
       const updatedOrder = response.data;
 
       setOrders((currentOrders) => {
-        const updatedOrders = currentOrders.map((currentOrder) =>
-          currentOrder._id === orderId ? updatedOrder : currentOrder,
+        const updatedOrders = currentOrders.map(
+          (currentOrder) =>
+            currentOrder._id === orderId
+              ? updatedOrder
+              : currentOrder
         );
 
-        const appliedStatus = appliedFilters.current.status;
+        const appliedStatus =
+          appliedFilters.current.status;
 
         return appliedStatus
           ? updatedOrders.filter(
-              (currentOrder) => currentOrder.status === appliedStatus,
+              (currentOrder) =>
+                currentOrder.status === appliedStatus
             )
           : updatedOrders;
       });
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to update order status."));
+      setError(
+        getErrorMessage(
+          err,
+          'Failed to update order status.'
+        )
+      );
     } finally {
       updateInProgress.current = false;
       setUpdatingOrderId(null);
     }
   };
 
-  const controlsDisabled = loading || updatingOrderId !== null;
+  const controlsDisabled =
+    loading || updatingOrderId !== null;
 
   return (
     <main className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6">
-          <p className="text-sm font-medium text-indigo-600">Administration</p>
+          <p className="text-sm font-medium text-indigo-600">
+            Administration
+          </p>
 
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
             Orders
           </h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            Review customer orders and update their fulfillment status.
+            Review customer orders and update their
+            fulfillment status.
           </p>
         </div>
 
@@ -197,7 +251,9 @@ export default function Orders() {
               <select
                 value={statusFilter}
                 onChange={(event) =>
-                  setStatusFilter(event.target.value as OrderStatus | "")
+                  setStatusFilter(
+                    event.target.value as OrderStatus | ''
+                  )
                 }
                 className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               >
@@ -220,7 +276,9 @@ export default function Orders() {
                 type="date"
                 value={startDate}
                 max={endDate || undefined}
-                onChange={(event) => setStartDate(event.target.value)}
+                onChange={(event) =>
+                  setStartDate(event.target.value)
+                }
                 className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               />
             </label>
@@ -234,7 +292,9 @@ export default function Orders() {
                 type="date"
                 value={endDate}
                 min={startDate || undefined}
-                onChange={(event) => setEndDate(event.target.value)}
+                onChange={(event) =>
+                  setEndDate(event.target.value)
+                }
                 className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               />
             </label>
@@ -273,16 +333,20 @@ export default function Orders() {
         {/* Orders */}
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">Orders</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Orders
+            </h2>
 
             <span
               aria-live="polite"
               className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700"
             >
               {loading
-                ? "Loading…"
+                ? 'Loading…'
                 : `${orders.length} ${
-                    orders.length === 1 ? "order" : "orders"
+                    orders.length === 1
+                      ? 'order'
+                      : 'orders'
                   }`}
             </span>
           </div>
@@ -297,45 +361,61 @@ export default function Orders() {
           ) : orders.length === 0 ? (
             <div className="p-10 text-center text-sm text-gray-500">
               {error
-                ? "Orders could not be displayed. Check the error above."
-                : "No orders match the selected filters."}
+                ? 'Orders could not be displayed. Check the error above.'
+                : 'No orders match the selected filters.'}
             </div>
           ) : (
             <>
               {/* Mobile cards */}
               <div className="divide-y divide-gray-100 lg:hidden">
                 {orders.map((order) => {
-                  const isUpdating = updatingOrderId === order._id;
+                  const isUpdating =
+                    updatingOrderId === order._id;
 
                   return (
-                    <article key={order._id} className="p-5">
+                    <article
+                      key={order._id}
+                      className="p-5"
+                    >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-900">
-                            {order.user?.name || order.address.fullName}
+                            {order.user?.name ||
+                              order.address.fullName}
                           </p>
 
                           <p className="mt-1 truncate text-xs text-gray-500">
-                            {order.user?.email || order.address.phone}
+                            {order.user?.email ||
+                              order.address.phone}
                           </p>
 
                           <p className="mt-1 text-xs text-gray-400">
-                            #{order._id.slice(-8).toUpperCase()}
+                            #
+                            {order._id
+                              .slice(-8)
+                              .toUpperCase()}
                           </p>
                         </div>
 
                         <p className="text-lg font-bold text-gray-900">
-                          {currencyFormatter.format(order.totalAmount)}
+                          {currencyFormatter.format(
+                            order.totalAmount
+                          )}
                         </p>
                       </div>
 
                       <ul className="mt-4 space-y-1 text-sm text-gray-700">
-                        {order.items.map((item, index) => (
-                          <li key={`${order._id}-item-${index}`}>
-                            {item.quantity}×{" "}
-                            {item.food?.name || "Unavailable item"}
-                          </li>
-                        ))}
+                        {order.items.map(
+                          (item, index) => (
+                            <li
+                              key={`${order._id}-item-${index}`}
+                            >
+                              {item.quantity}×{' '}
+                              {item.food?.name ||
+                                'Unavailable item'}
+                            </li>
+                          )
+                        )}
                       </ul>
 
                       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -349,21 +429,22 @@ export default function Orders() {
 
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                            paymentStyles[order.paymentStatus]
+                            paymentStyles[
+                              order.paymentStatus
+                            ]
                           }`}
                         >
                           {order.paymentStatus}
                         </span>
 
                         <span className="text-xs text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString(
-                            undefined,
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            },
-                          )}
+                          {new Date(
+                            order.createdAt
+                          ).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
                         </span>
                       </div>
 
@@ -382,16 +463,22 @@ export default function Orders() {
                           onChange={(event) => {
                             void handleStatusChange(
                               order._id,
-                              event.target.value as OrderStatus,
+                              event.target
+                                .value as OrderStatus
                             );
                           }}
                           className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {ORDER_STATUSES.map((status) => (
-                            <option key={status} value={status}>
-                              {formatStatus(status)}
-                            </option>
-                          ))}
+                          {ORDER_STATUSES.map(
+                            (status) => (
+                              <option
+                                key={status}
+                                value={status}
+                              >
+                                {formatStatus(status)}
+                              </option>
+                            )
+                          )}
                         </select>
 
                         {isUpdating && (
@@ -403,6 +490,16 @@ export default function Orders() {
                           </p>
                         )}
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleViewOrder(order._id)
+                        }
+                        className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        View details
+                      </button>
                     </article>
                   );
                 })}
@@ -414,12 +511,12 @@ export default function Orders() {
                   <thead className="bg-gray-50">
                     <tr>
                       {[
-                        "Customer",
-                        "Items",
-                        "Total",
-                        "Payment",
-                        "Status",
-                        "Date",
+                        'Customer',
+                        'Items',
+                        'Total',
+                        'Payment',
+                        'Status',
+                        'Date',
                       ].map((heading) => (
                         <th
                           key={heading}
@@ -434,7 +531,8 @@ export default function Orders() {
 
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {orders.map((order) => {
-                      const isUpdating = updatingOrderId === order._id;
+                      const isUpdating =
+                        updatingOrderId === order._id;
 
                       return (
                         <tr
@@ -443,16 +541,33 @@ export default function Orders() {
                         >
                           <td className="px-5 py-4">
                             <p className="font-medium text-gray-900">
-                              {order.user?.name || order.address.fullName}
+                              {order.user?.name ||
+                                order.address.fullName}
                             </p>
 
                             <p className="mt-1 text-sm text-gray-500">
-                              {order.user?.email || order.address.phone}
+                              {order.user?.email ||
+                                order.address.phone}
                             </p>
 
                             <p className="mt-1 text-xs text-gray-400">
-                              #{order._id.slice(-8).toUpperCase()}
+                              #
+                              {order._id
+                                .slice(-8)
+                                .toUpperCase()}
                             </p>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleViewOrder(
+                                  order._id
+                                )
+                              }
+                              className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                            >
+                              View details
+                            </button>
                           </td>
 
                           <td className="max-w-xs px-5 py-4">
@@ -461,21 +576,26 @@ export default function Orders() {
                                 .map(
                                   (item) =>
                                     `${item.quantity}× ${
-                                      item.food?.name || "Unavailable item"
-                                    }`,
+                                      item.food?.name ||
+                                      'Unavailable item'
+                                    }`
                                 )
-                                .join(", ")}
+                                .join(', ')}
                             </p>
                           </td>
 
                           <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-gray-900">
-                            {currencyFormatter.format(order.totalAmount)}
+                            {currencyFormatter.format(
+                              order.totalAmount
+                            )}
                           </td>
 
                           <td className="px-5 py-4">
                             <span
                               className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                paymentStyles[order.paymentStatus]
+                                paymentStyles[
+                                  order.paymentStatus
+                                ]
                               }`}
                             >
                               {order.paymentStatus}
@@ -486,10 +606,14 @@ export default function Orders() {
                             <div className="space-y-2">
                               <span
                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                  statusStyles[order.status]
+                                  statusStyles[
+                                    order.status
+                                  ]
                                 }`}
                               >
-                                {formatStatus(order.status)}
+                                {formatStatus(
+                                  order.status
+                                )}
                               </span>
 
                               <select
@@ -499,16 +623,24 @@ export default function Orders() {
                                 onChange={(event) => {
                                   void handleStatusChange(
                                     order._id,
-                                    event.target.value as OrderStatus,
+                                    event.target
+                                      .value as OrderStatus
                                   );
                                 }}
                                 className="block w-full min-w-40 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {ORDER_STATUSES.map((status) => (
-                                  <option key={status} value={status}>
-                                    {formatStatus(status)}
-                                  </option>
-                                ))}
+                                {ORDER_STATUSES.map(
+                                  (status) => (
+                                    <option
+                                      key={status}
+                                      value={status}
+                                    >
+                                      {formatStatus(
+                                        status
+                                      )}
+                                    </option>
+                                  )
+                                )}
                               </select>
 
                               {isUpdating && (
@@ -523,13 +655,15 @@ export default function Orders() {
                           </td>
 
                           <td className="whitespace-nowrap px-5 py-4 text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString(
+                            {new Date(
+                              order.createdAt
+                            ).toLocaleDateString(
                               undefined,
                               {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              }
                             )}
                           </td>
                         </tr>
@@ -541,6 +675,15 @@ export default function Orders() {
             </>
           )}
         </section>
+
+        <OrderDetailsModal
+          order={selectedOrder}
+          updating={updatingOrderId === selectedOrderId}
+          onStatusChange={(orderId, status) => {
+            void handleStatusChange(orderId, status);
+          }}
+          onClose={() => setSelectedOrderId(null)}
+        />
       </div>
     </main>
   );
