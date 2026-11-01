@@ -1,42 +1,60 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
-import { getMyOrders } from "../api/order";
-import { getFoodImageUrl } from "../api/food";
-import { useAuth } from "../hooks/useAuth";
+import { getMyOrders } from '../api/order';
+import { createCheckoutSession } from '../api/payments';
+import { getFoodImageUrl } from '../api/food';
+import { useAuth } from '../hooks/useAuth';
 
-import type { IPopulatedOrder } from "../types";
+import type { IPopulatedOrder } from '../types';
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
 });
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
 });
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700 ring-amber-200",
-  confirmed: "bg-blue-50 text-blue-700 ring-blue-200",
-  preparing: "bg-purple-50 text-purple-700 ring-purple-200",
-  "out-for-delivery": "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  delivered: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  cancelled: "bg-red-50 text-red-700 ring-red-200",
+  pending: 'bg-amber-50 text-amber-700 ring-amber-200',
+  confirmed: 'bg-blue-50 text-blue-700 ring-blue-200',
+  preparing:
+    'bg-purple-50 text-purple-700 ring-purple-200',
+  'out-for-delivery':
+    'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  delivered:
+    'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  cancelled: 'bg-red-50 text-red-700 ring-red-200',
+};
+
+const paymentStyles: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-700 ring-amber-200',
+  paid: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  failed: 'bg-red-50 text-red-700 ring-red-200',
+  refunded: 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
 function formatStatus(status: string) {
   return status
-    .split("-")
+    .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }
 
-function getErrorMessage(error: unknown, fallback: string): string {
+function getErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
   if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message || error.message || fallback;
+    return (
+      error.response?.data?.message ||
+      error.message ||
+      fallback
+    );
   }
 
   return error instanceof Error ? error.message : fallback;
@@ -45,10 +63,19 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export default function MyOrders() {
   const { user, loading } = useAuth();
 
-  const [orders, setOrders] = useState<IPopulatedOrder[]>([]);
+  const [orders, setOrders] = useState<IPopulatedOrder[]>(
+    []
+  );
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  const [payingOrderId, setPayingOrderId] = useState<
+    string | null
+  >(null);
+  const [paymentError, setPaymentError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!user) {
@@ -63,14 +90,21 @@ export default function MyOrders() {
       setError(null);
 
       try {
-        const response = await getMyOrders(controller.signal);
+        const response = await getMyOrders(
+          controller.signal
+        );
 
         if (!controller.signal.aborted) {
           setOrders(response.data);
         }
       } catch (err: unknown) {
         if (!controller.signal.aborted) {
-          setError(getErrorMessage(err, "Unable to load your orders."));
+          setError(
+            getErrorMessage(
+              err,
+              'Unable to load your orders.'
+            )
+          );
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -86,10 +120,35 @@ export default function MyOrders() {
     };
   }, [user, retryCount]);
 
+  const handlePayNow = async (orderId: string) => {
+    setPayingOrderId(orderId);
+    setPaymentError(null);
+
+    try {
+      const response = await createCheckoutSession(
+        orderId
+      );
+
+      window.location.href =
+        response.data.checkoutUrl;
+    } catch (err: unknown) {
+      setPaymentError(
+        getErrorMessage(
+          err,
+          'Unable to start payment. Please try again.'
+        )
+      );
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-        <p className="text-sm text-slate-500">Checking your session…</p>
+        <p className="text-sm text-slate-500">
+          Checking your session…
+        </p>
       </main>
     );
   }
@@ -103,12 +162,13 @@ export default function MyOrders() {
           </h1>
 
           <p className="mt-3 text-sm text-slate-600">
-            Your order history is available after signing in.
+            Your order history is available after signing
+            in.
           </p>
 
           <Link
             to="/login"
-            state={{ from: "/orders" }}
+            state={{ from: '/orders' }}
             className="mt-6 inline-block rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             Sign in
@@ -122,7 +182,10 @@ export default function MyOrders() {
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="text-xl font-bold text-indigo-600">
+          <Link
+            to="/"
+            className="text-xl font-bold text-indigo-600"
+          >
             FoodFlow
           </Link>
 
@@ -136,11 +199,22 @@ export default function MyOrders() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-        <h1 className="text-3xl font-bold tracking-tight">My orders</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          My orders
+        </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          Track your recent FoodFlow orders.
+          Track your orders and complete pending payments.
         </p>
+
+        {paymentError && (
+          <p
+            role="alert"
+            className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {paymentError}
+          </p>
+        )}
 
         {loadingOrders ? (
           <div
@@ -158,7 +232,9 @@ export default function MyOrders() {
 
             <button
               type="button"
-              onClick={() => setRetryCount((current) => current + 1)}
+              onClick={() =>
+                setRetryCount((current) => current + 1)
+              }
               className="mt-5 rounded-xl bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-800"
             >
               Try again
@@ -166,7 +242,9 @@ export default function MyOrders() {
           </div>
         ) : orders.length === 0 ? (
           <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <h2 className="text-lg font-semibold">No orders yet</h2>
+            <h2 className="text-lg font-semibold">
+              No orders yet
+            </h2>
 
             <p className="mt-2 text-sm text-slate-500">
               When you place an order, it will appear here.
@@ -189,11 +267,16 @@ export default function MyOrders() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">
-                      Order #{order._id.slice(-8).toUpperCase()}
+                      Order #
+                      {order._id
+                        .slice(-8)
+                        .toUpperCase()}
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      {dateFormatter.format(new Date(order.createdAt))}
+                      {dateFormatter.format(
+                        new Date(order.createdAt)
+                      )}
                     </p>
                   </div>
 
@@ -201,7 +284,7 @@ export default function MyOrders() {
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
                         statusStyles[order.status] ||
-                        "bg-slate-100 text-slate-700 ring-slate-200"
+                        'bg-slate-100 text-slate-700 ring-slate-200'
                       }`}
                     >
                       {formatStatus(order.status)}
@@ -209,44 +292,59 @@ export default function MyOrders() {
 
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                        order.paymentStatus === "paid"
-                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                          : "bg-amber-50 text-amber-700 ring-amber-200"
+                        paymentStyles[
+                          order.paymentStatus
+                        ] ||
+                        'bg-slate-100 text-slate-700 ring-slate-200'
                       }`}
                     >
-                      {formatStatus(order.paymentStatus)}
+                      {formatStatus(
+                        order.paymentStatus
+                      )}
                     </span>
                   </div>
                 </div>
 
                 <div className="px-5 py-5 sm:px-6">
                   <ul className="space-y-4">
-                    {order.items.map((item, index) => (
-                      <li
-                        key={`${order._id}-${item.food._id}-${index}`}
-                        className="flex items-center gap-4"
-                      >
-                        <img
-                          src={getFoodImageUrl(item.food.image)}
-                          alt={item.food.name}
-                          loading="lazy"
-                          className="h-16 w-16 rounded-xl bg-slate-100 object-cover"
-                        />
+                    {order.items.map(
+                      (item, index) => (
+                        <li
+                          key={`${order._id}-${item.food._id}-${index}`}
+                          className="flex items-center gap-4"
+                        >
+                          <img
+                            src={getFoodImageUrl(
+                              item.food.image
+                            )}
+                            alt={item.food.name}
+                            loading="lazy"
+                            className="h-16 w-16 rounded-xl bg-slate-100 object-cover"
+                          />
 
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold">{item.food.name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold">
+                              {item.food.name}
+                            </p>
 
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            Quantity: {item.quantity} •{" "}
-                            {currencyFormatter.format(item.unitPrice)} each
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              Quantity:{' '}
+                              {item.quantity} •{' '}
+                              {currencyFormatter.format(
+                                item.unitPrice
+                              )}{' '}
+                              each
+                            </p>
+                          </div>
+
+                          <p className="text-sm font-semibold">
+                            {currencyFormatter.format(
+                              item.subtotal
+                            )}
                           </p>
-                        </div>
-
-                        <p className="text-sm font-semibold">
-                          {currencyFormatter.format(item.subtotal)}
-                        </p>
-                      </li>
-                    ))}
+                        </li>
+                      )
+                    )}
                   </ul>
 
                   <div className="mt-6 grid gap-4 border-t border-slate-200 pt-5 sm:grid-cols-2">
@@ -260,7 +358,8 @@ export default function MyOrders() {
                         <br />
                         {order.address.street}
                         <br />
-                        {order.address.city}, {order.address.country}
+                        {order.address.city},{' '}
+                        {order.address.country}
                         <br />
                         {order.address.phone}
                       </address>
@@ -272,8 +371,30 @@ export default function MyOrders() {
                       </h3>
 
                       <p className="mt-2 text-2xl font-bold text-indigo-600">
-                        {currencyFormatter.format(order.totalAmount)}
+                        {currencyFormatter.format(
+                          order.totalAmount
+                        )}
                       </p>
+
+                      {order.paymentStatus !==
+                        'paid' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handlePayNow(order._id)
+                          }
+                          disabled={
+                            payingOrderId ===
+                            order._id
+                          }
+                          className="mt-4 w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                        >
+                          {payingOrderId ===
+                          order._id
+                            ? 'Starting payment…'
+                            : 'Pay now'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

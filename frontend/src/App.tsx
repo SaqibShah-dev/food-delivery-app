@@ -7,15 +7,17 @@ import AdminRoute from "./components/AdminRoute";
 import AdminLayout from "./layouts/AdminLayout";
 
 import Login from "./pages/Login";
-import Register from './pages/Register';
+import Register from "./pages/Register";
 
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
-import MyOrders from './pages/MyOrders';
+import MyOrders from "./pages/MyOrders";
 import Food from "./pages/admin/Food";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
 
 function AccessDenied() {
   const { logout } = useAuth();
@@ -62,6 +64,9 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/orders" element={<MyOrders />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
 
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
 
