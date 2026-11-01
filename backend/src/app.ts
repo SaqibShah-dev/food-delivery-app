@@ -5,9 +5,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import routes from './routes/index.js';
+import paymentRoutes from './routes/payment.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiLimiter } from './middleware/rateLimit.middleware.js';
 import { env } from './config/env.js';
+import paymentWebhookRoutes from './routes/paymentWebhook.routes.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +27,15 @@ app.use(
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
+);
+
+// Stripe requires the exact raw request body for
+// webhook signature verification. This must run
+// before express.json().
+app.use(
+  '/api/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  paymentWebhookRoutes
 );
 
 // Reject JSON bodies larger than 100 KB
