@@ -270,11 +270,3 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [D
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## Author
-
-Built and maintained by the project author and contributors.
-
----
-
-If you want, I can also generate a shorter, more GitHub-optimized version of this README or tailor it specifically for portfolio presentation.
