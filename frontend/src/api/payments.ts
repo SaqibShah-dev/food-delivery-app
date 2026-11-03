@@ -12,7 +12,7 @@ export async function createCheckoutSession(
 ) {
   const response = await api.post<
     IApiResponse<ICheckoutSessionResponse>
-  >('/payments/create-checkout-session', {
+  >('/payment/create-checkout-session', {
     orderId,
   });
 

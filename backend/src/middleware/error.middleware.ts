@@ -12,6 +12,7 @@ type AppError = Error & {
   statusCode?: number;
   code?: number | string;
   keyValue?: Record<string, unknown>;
+  type?: string;
 };
 
 export const errorHandler: ErrorRequestHandler = (
@@ -25,6 +26,12 @@ export const errorHandler: ErrorRequestHandler = (
   let status = err.status || err.statusCode || 500;
   let message = err.message || 'Internal server error';
   let errors: Record<string, string[]> | undefined;
+
+  if (err.type === 'StripeAuthenticationError') {
+    status = 502;
+    message =
+      'Payment provider authentication failed. Check the backend Stripe secret key.';
+  }
 
   // Zod validation errors
   if (err instanceof ZodError) {

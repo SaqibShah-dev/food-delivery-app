@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import routes from './routes/index.js';
-import paymentRoutes from './routes/payment.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiLimiter } from './middleware/rateLimit.middleware.js';
 import { env } from './config/env.js';
@@ -33,7 +32,7 @@ app.use(
 // webhook signature verification. This must run
 // before express.json().
 app.use(
-  '/api/payments/webhook',
+  '/api/payment/webhook',
   express.raw({ type: 'application/json' }),
   paymentWebhookRoutes
 );
