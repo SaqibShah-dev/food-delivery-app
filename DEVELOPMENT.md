@@ -38,11 +38,33 @@ NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/food-delivery-app
 JWT_SECRET=replace_with_a_long_random_value
 JWT_EXPIRES_IN=7d
-STRIPE_SECRET_KEY=sk_test_your_key_here
+STRIPE_SECRET_KEY=sk_test_replace_with_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
 CLIENT_URL=http://localhost:5173
 ```
 
 The app validates these values in `backend/src/config/env.ts` and exits on startup if any required variable is missing.
+
+#### Configure Stripe for local payments
+
+1. In the Stripe Dashboard, enable **test mode** and copy the test **secret key** (`sk_test_...`) into `STRIPE_SECRET_KEY`. Do not use a publishable key (`pk_...`) or webhook signing secret (`whsec_...`) as the API key. Replace the example value; it is only a placeholder.
+2. Install and authenticate the [Stripe CLI](https://docs.stripe.com/stripe-cli), then forward webhook events to the local backend:
+
+   ```bash
+   stripe listen --forward-to localhost:5000/api/payment/webhook
+   ```
+
+3. Copy the webhook signing secret printed by the CLI (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
+4. Restart the backend after changing `backend/.env`. Keep the CLI listener running while testing payments.
+
+The checkout API creates a session for an existing unpaid order. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. After a successful test payment, the webhook marks the order as paid.
+
+#### Payment troubleshooting
+
+- **`401 Unauthorized` from the checkout endpoint:** sign in again and confirm the request includes `Authorization: Bearer <JWT>`. This is separate from Stripe credentials.
+- **`502 Bad Gateway` with “Payment provider authentication failed”:** Stripe rejected `STRIPE_SECRET_KEY`. Check that it is an active secret key from the correct Stripe account and mode; replace placeholders or revoked keys, then restart the backend.
+- **Webhook signature errors:** ensure the Stripe CLI listener is running and `STRIPE_WEBHOOK_SECRET` matches the current listener. The CLI may generate a different signing secret each time it starts.
+- **Checkout opens but the order remains pending:** verify that `checkout.session.completed` events are forwarded to `/api/payment/webhook` and check the backend logs for webhook errors.
 
 ### 4. Install frontend dependencies
 

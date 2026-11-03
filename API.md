@@ -572,24 +572,13 @@ Example response:
 
 - Method: `POST /payment/create-checkout-session`
 - Auth required: Yes
+- Purpose: creates a Stripe Checkout session for an existing unpaid order owned by the authenticated user. Create the order first with `POST /orders`.
 
 Request body:
 
 ```json
 {
-  "items": [
-    {
-      "foodId": "64c0e1f4d3a5bc0425d1f3b1",
-      "quantity": 1
-    }
-  ],
-  "address": {
-    "fullName": "Jane Doe",
-    "phone": "+1234567890",
-    "street": "123 Main Street",
-    "city": "New York",
-    "country": "USA"
-  }
+  "orderId": "64c0e1f4d3a5bc0425d1f3c9"
 }
 ```
 
@@ -601,15 +590,17 @@ Example response:
   "message": "Stripe Checkout session created",
   "data": {
     "sessionId": "cs_test_123",
-    "url": "https://checkout.stripe.com/xxx"
+    "checkoutUrl": "https://checkout.stripe.com/xxx"
   }
 }
 ```
 
 Common errors:
 
-- `400`: missing or invalid delivery address
+- `400`: missing `orderId`, order already paid, or order is cancelled
 - `401`: missing or invalid JWT
+- `404`: order not found or does not belong to the authenticated user
+- `502`: Stripe rejected the configured secret key
 
 ### Stripe webhook
 
@@ -617,7 +608,7 @@ Common errors:
 - Auth required: No
 - Purpose: receives Stripe webhook events and updates order payment status when checkout completes
 
-This endpoint expects the standard Stripe signature header: `stripe-signature`.
+This endpoint expects the standard Stripe signature header: `stripe-signature` and the unmodified raw request body. Configure Stripe to send `checkout.session.completed` events to this URL. For local development, see the Stripe webhook setup in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ---
 

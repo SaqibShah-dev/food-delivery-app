@@ -145,9 +145,12 @@ NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/food-delivery-app
 JWT_SECRET=replace_with_a_long_random_value
 JWT_EXPIRES_IN=7d
-STRIPE_SECRET_KEY=sk_test_your_key_here
+STRIPE_SECRET_KEY=sk_test_replace_with_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
 CLIENT_URL=http://localhost:5173
 ```
+
+Replace the Stripe placeholders with your test-mode secret key and webhook signing secret. See [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe CLI setup and payment troubleshooting.
 
 ### 3. Install dependencies
 
