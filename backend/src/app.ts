@@ -28,11 +28,9 @@ app.use(
   })
 );
 
-// Stripe requires the exact raw request body for
-// webhook signature verification. This must run
-// before express.json().
+
 app.use(
-  '/api/payment/webhook',
+  '/api/payments/webhook',
   express.raw({ type: 'application/json' }),
   paymentWebhookRoutes
 );
