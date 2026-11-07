@@ -173,37 +173,56 @@ export const orderService = {
   },
 
   async updateOrderStatus(id: string, status: string) {
-    const allowedStatuses = [
-      "pending",
-      "confirmed",
-      "preparing",
-      "out-for-delivery",
-      "delivered",
-      "cancelled",
-    ];
+    const transitions: Record<string, string[]> = {
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["preparing", "cancelled"],
+      preparing: ["out-for-delivery", "cancelled"],
+      "out-for-delivery": ["delivered"],
+      delivered: [],
+      cancelled: [],
+    };
 
-    if (!allowedStatuses.includes(status)) {
-      const err: any = new Error(
-        `Invalid order status. Allowed values: ${allowedStatuses.join(", ")}`,
-      );
+    if (!Object.hasOwn(transitions, status)) {
+      const err: any = new Error("Invalid order status");
       err.status = 400;
       throw err;
     }
 
-    const order = await Order.findByIdAndUpdate(
-      id,
+    const currentOrder = await Order.findById(id);
+    if (!currentOrder) {
+      const err: any = new Error("Order not found");
+      err.status = 404;
+      throw err;
+    }
+
+    if (currentOrder.status === status) {
+      return currentOrder.populate([
+        { path: "user", select: "name email" },
+        { path: "items.food", select: "name image category" },
+      ]);
+    }
+
+    if (!transitions[currentOrder.status]?.includes(status)) {
+      const err: any = new Error(
+        `Order cannot transition from "${currentOrder.status}" to "${status}"`,
+      );
+      err.status = 409;
+      throw err;
+    }
+
+    const order = await Order.findOneAndUpdate(
+      { _id: id, status: currentOrder.status },
       { status },
-      {
-        new: true,
-        runValidators: true,
-      },
+      { new: true, runValidators: true },
     )
       .populate("user", "name email")
       .populate("items.food", "name image category");
 
     if (!order) {
-      const err: any = new Error("Order not found");
-      err.status = 404;
+      const err: any = new Error(
+        "Order status changed concurrently; refresh and try again",
+      );
+      err.status = 409;
       throw err;
     }
 
@@ -260,8 +279,19 @@ export const orderService = {
       throw err;
     }
 
-    if (order.paymentStatus === "paid") {
+    if (
+      order.paymentStatus === "paid" &&
+      (!order.paymentId || order.paymentId === paymentId)
+    ) {
       return order;
+    }
+
+    if (order.paymentStatus === "paid") {
+      const err: any = new Error(
+        "Order was already paid by a different Stripe Checkout Session",
+      );
+      err.status = 409;
+      throw err;
     }
 
     if (order.status === "cancelled") {
@@ -271,12 +301,25 @@ export const orderService = {
     }
 
     const updatedOrder = await Order.findOneAndUpdate(
-      { _id: orderId, user: userId, paymentStatus: { $ne: "paid" } },
+      {
+        _id: orderId,
+        user: userId,
+        paymentStatus: { $ne: "paid" },
+        status: { $ne: "cancelled" },
+      },
       { paymentStatus: "paid", paymentId },
       { new: true, runValidators: true },
     );
 
     if (!updatedOrder) {
+      const latestOrder = await Order.findOne({ _id: orderId, user: userId });
+      if (
+        latestOrder?.paymentStatus === "paid" &&
+        (!latestOrder.paymentId || latestOrder.paymentId === paymentId)
+      ) {
+        return latestOrder;
+      }
+
       const err: any = new Error("Order payment status changed unexpectedly");
       err.status = 409;
       throw err;

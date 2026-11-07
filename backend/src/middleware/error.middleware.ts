@@ -21,7 +21,8 @@ export const errorHandler: ErrorRequestHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  console.error('Error:', err);
+  const requestId = res.locals.requestId as string | undefined;
+  console.error(`[${requestId ?? 'unknown-request'}]`, err);
 
   let status = err.status || err.statusCode || 500;
   let message = err.message || 'Internal server error';
@@ -98,9 +99,14 @@ export const errorHandler: ErrorRequestHandler = (
     status = 400;
   }
 
+  if (status >= 500 && err.type !== 'StripeAuthenticationError') {
+    message = 'Internal server error';
+  }
+
   res.status(status).json({
     status,
-    message,
+    message: message || 'Internal server error',
+    requestId,
     ...(errors && { errors }),
     ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack,

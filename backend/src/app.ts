@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiLimiter } from './middleware/rateLimit.middleware.js';
+import { requestIdMiddleware } from './middleware/requestId.middleware.js';
 import { env } from './config/env.js';
 import paymentWebhookRoutes from './routes/paymentWebhook.routes.js';
 
@@ -15,6 +16,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+app.use(requestIdMiddleware);
 
 // Security headers
 app.use(helmet());
@@ -25,6 +28,7 @@ app.use(
     origin: env.CLIENT_URL,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['X-Request-ID'],
   })
 );
 
@@ -61,6 +65,7 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({
     status: 404,
     message: 'Route not found',
+    requestId: res.locals.requestId,
   });
 });
 

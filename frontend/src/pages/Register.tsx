@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { registerUser } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
+import { getSafeRedirectPath } from "../utils/redirect";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "password" | "confirmPassword", string>
@@ -49,7 +50,20 @@ function validateRegister(
 
 export default function Register() {
   const { user, loading, login } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const routeState = location.state as { from?: unknown } | null;
+  const requestedPath = getSafeRedirectPath(routeState?.from);
+  const getDestination = (role: string) => {
+    if (
+      (requestedPath === "/admin" || requestedPath?.startsWith("/admin/")) &&
+      role !== "admin"
+    ) {
+      return "/access-denied";
+    }
+
+    return requestedPath || (role === "admin" ? "/admin/dashboard" : "/");
+  };
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,7 +86,7 @@ export default function Register() {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={getDestination(user.role)} replace />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,10 +115,7 @@ export default function Register() {
         password,
       });
 
-      navigate(
-        registeredUser.user.role === "admin" ? "/admin/dashboard" : "/",
-        { replace: true },
-      );
+      navigate(getDestination(registeredUser.user.role), { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
         setFormError(
@@ -365,6 +376,7 @@ export default function Register() {
               Already have an account?{" "}
               <Link
                 to="/login"
+                state={{ from: requestedPath }}
                 className="font-semibold text-indigo-600 hover:text-indigo-800"
               >
                 Sign in

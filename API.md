@@ -36,11 +36,14 @@ The backend uses a simple response envelope:
 {
   "status": 400,
   "message": "Validation failed",
+  "requestId": "2a2508de-bb35-49d5-873d-16a9a64a1a1f",
   "errors": {
     "email": ["Please provide a valid email address"]
   }
 }
 ```
+
+Every response includes an `X-Request-ID` header. Error responses include the same ID in the JSON body so a request can be correlated with backend logs.
 
 Important implementation details:
 
@@ -541,6 +544,8 @@ Allowed values:
 - `delivered`
 - `cancelled`
 
+Allowed transitions are `pending → confirmed` or `cancelled`; `confirmed → preparing` or `cancelled`; `preparing → out-for-delivery` or `cancelled`; and `out-for-delivery → delivered`. `delivered` and `cancelled` are terminal. Repeating the current status is idempotent; any other transition returns `409`.
+
 Example response:
 
 ```json
@@ -621,6 +626,7 @@ Common errors:
 - `400`: missing `orderId`, order already paid, or order is cancelled
 - `401`: missing or invalid JWT
 - `404`: order not found or does not belong to the authenticated user
+- `409`: order is COD or its stored Checkout Session has already completed
 - `502`: Stripe rejected the configured secret key
 
 ### Confirm a Stripe checkout session

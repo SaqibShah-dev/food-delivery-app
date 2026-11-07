@@ -12,9 +12,12 @@ export const apiLimiter = rateLimit({
   limit: apiMax,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
-  message: {
-    status: 429,
-    message: 'Too many requests. Please try again later.',
+  handler: (_req, res) => {
+    res.status(429).json({
+      status: 429,
+      message: 'Too many requests. Please try again later.',
+      requestId: res.locals.requestId,
+    });
   },
 });
 
@@ -23,8 +26,11 @@ export const authLimiter = rateLimit({
   limit: authMax,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
-  message: {
-    status: 429,
-    message: 'Too many authentication attempts. Please try again later.',
+  handler: (_req, res) => {
+    res.status(429).json({
+      status: 429,
+      message: 'Too many authentication attempts. Please try again later.',
+      requestId: res.locals.requestId,
+    });
   },
 });

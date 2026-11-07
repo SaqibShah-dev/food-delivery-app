@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import { getSafeRedirectPath } from "../utils/redirect";
 
 type FieldErrors = Partial<Record<"email" | "password", string>>;
 
@@ -39,12 +40,17 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const routeState = location.state as { from?: string } | null;
-  const requestedPath = routeState?.from;
+  const requestedPath = getSafeRedirectPath(routeState?.from);
+  const getDestination = (role: string) => {
+    if (
+      (requestedPath === "/admin" || requestedPath?.startsWith("/admin/")) &&
+      role !== "admin"
+    ) {
+      return "/access-denied";
+    }
 
-  const adminDestination =
-    typeof requestedPath === "string" && requestedPath.startsWith("/admin/")
-      ? requestedPath
-      : "/admin/dashboard";
+    return requestedPath || (role === "admin" ? "/admin/dashboard" : "/");
+  };
 
   if (loading) {
     return (
@@ -56,7 +62,7 @@ export default function Login() {
 
   if (user) {
     return (
-      <Navigate to={user.role === "admin" ? adminDestination : "/"} replace />
+      <Navigate to={getDestination(user.role)} replace />
     );
   }
 
@@ -79,9 +85,7 @@ export default function Login() {
         password,
       });
 
-      navigate(loggedInUser.role === "admin" ? adminDestination : "/", {
-        replace: true,
-      });
+      navigate(getDestination(loggedInUser.role), { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
         setFormError(
@@ -258,6 +262,7 @@ export default function Login() {
               New to FoodFlow?{" "}
               <Link
                 to="/register"
+                state={{ from: requestedPath }}
                 className="font-semibold text-indigo-600 hover:text-indigo-800"
               >
                 Create an account

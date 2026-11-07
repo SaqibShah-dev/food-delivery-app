@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
-import { ORDER_STATUSES } from "../../types";
+import { getOrderStatusOptions } from "../../types";
 
 import type { IOrder, OrderStatus } from "../../types";
 import { getFoodImageUrl } from "../../api/food";
@@ -290,7 +290,7 @@ export default function OrderDetailsModal({
                 }
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-xs"
               >
-                {ORDER_STATUSES.map((status) => (
+                {getOrderStatusOptions(order.status).map((status) => (
                   <option key={status} value={status}>
                     {formatStatus(status)}
                   </option>

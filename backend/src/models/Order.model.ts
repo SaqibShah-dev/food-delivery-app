@@ -128,6 +128,10 @@ const orderSchema = new Schema<IOrderDoc>(
       type: String,
     },
 
+    checkoutSessionId: {
+      type: String,
+    },
+
     address: {
       type: addressSchema,
       required: true,

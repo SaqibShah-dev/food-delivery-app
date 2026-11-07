@@ -43,7 +43,7 @@ STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
 CLIENT_URL=http://localhost:5173
 ```
 
-The app validates these values in `backend/src/config/env.ts` and exits on startup if any required variable is missing.
+The app validates these values in `backend/src/config/env.ts` and exits on startup if required values are missing or malformed. `JWT_SECRET` must be at least 32 characters; MongoDB, browser URL, port, rate limits, Stripe secret key, and webhook signing secret formats are checked.
 
 #### Seed demo data and an admin account
 
@@ -70,9 +70,11 @@ The script creates the admin account if it does not already exist, seeds five de
 3. Copy the webhook signing secret printed by the CLI (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
 4. Restart the backend after changing `backend/.env`. Keep the CLI listener running while testing payments.
 
-The checkout API creates a session for an existing unpaid order. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. The webhook marks the order as paid; after checkout, the success page also asks the backend to verify the Stripe session directly. Use a newly started checkout session to test this flow.
+The checkout API creates a session for an existing unpaid order using its saved line-item prices, not current menu prices. Repeated payment-initiation requests reuse that order's active Checkout Session; an expired session can be replaced. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. Duplicate webhook deliveries are idempotent for the same Checkout Session; after checkout, the success page also asks the backend to verify the Stripe session directly.
 
 At checkout, customers can choose Stripe or cash on delivery. COD orders stay pending until an administrator confirms cash collection from the admin order list.
+
+Protected customer and admin pages wait for session restoration. If unauthenticated, users are sent to login and returned to their original route after login or registration. Order status changes are enforced by the backend and follow the allowed progression documented in `API.md`. API responses include an `X-Request-ID` header; errors include the same ID in their body and backend log entry.
 
 MongoDB indexes for customer order history, admin order filtering, legacy payment lookup, and available food listing are declared on the Mongoose schemas and are created by Mongoose when the models initialize. New order items preserve the food name, image, category, unit price, and subtotal as snapshots so later menu edits do not alter historical order details or reporting.
 

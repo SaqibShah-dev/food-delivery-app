@@ -9,7 +9,7 @@ import {
   updateOrderStatus,
 } from '../../api/admin';
 
-import { ORDER_STATUSES } from '../../types';
+import { getOrderStatusOptions, ORDER_STATUSES } from '../../types';
 
 import type {
   IOrder,
@@ -524,7 +524,8 @@ export default function Orders() {
                               key={`${order._id}-item-${index}`}
                             >
                               {item.quantity}×{' '}
-                              {item.food?.name ||
+                              {item.foodName ||
+                                item.food?.name ||
                                 'Unavailable item'}
                             </li>
                           )
@@ -605,7 +606,7 @@ export default function Orders() {
                           }}
                           className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {ORDER_STATUSES.map(
+                          {getOrderStatusOptions(order.status).map(
                             (status) => (
                               <option
                                 key={status}
@@ -712,6 +713,7 @@ export default function Orders() {
                                 .map(
                                   (item) =>
                                     `${item.quantity}× ${
+                                      item.foodName ||
                                       item.food?.name ||
                                       'Unavailable item'
                                     }`
@@ -790,7 +792,7 @@ export default function Orders() {
                                 }}
                                 className="block w-full min-w-40 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {ORDER_STATUSES.map(
+                                {getOrderStatusOptions(order.status).map(
                                   (status) => (
                                     <option
                                       key={status}

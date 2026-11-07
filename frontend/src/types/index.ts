@@ -12,6 +12,19 @@ export const MAX_ORDER_ITEM_QUANTITY = 99;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
+  preparing: ['out-for-delivery', 'cancelled'],
+  'out-for-delivery': ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+
+export function getOrderStatusOptions(status: OrderStatus): OrderStatus[] {
+  return [status, ...ORDER_STATUS_TRANSITIONS[status]];
+}
+
 export type PaymentStatus =
   | 'pending'
   | 'paid'

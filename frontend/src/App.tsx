@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
 import AdminRoute from "./components/AdminRoute";
+import RequireAuth from "./components/RequireAuth";
 import AdminLayout from "./layouts/AdminLayout";
 
 import Login from "./pages/Login";
@@ -47,7 +48,17 @@ function AccessDenied() {
 }
 
 function AccessDeniedRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+        <p role="status" className="text-sm text-slate-500">
+          Checking your session…
+        </p>
+      </main>
+    );
+  }
 
   return user ? <AccessDenied /> : <Navigate to="/login" replace />;
 }
@@ -62,13 +73,16 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/orders" element={<MyOrders />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
-
-          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/orders" element={<MyOrders />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route
+              path="/order-confirmation"
+              element={<OrderConfirmation />}
+            />
+          </Route>
 
           <Route path="/access-denied" element={<AccessDeniedRoute />} />
 

@@ -41,6 +41,27 @@ export const paymentService = {
       throw err;
     }
 
+    if (order.checkoutSessionId) {
+      const existingSession = await stripe.checkout.sessions.retrieve(
+        order.checkoutSessionId
+      );
+
+      if (existingSession.status === 'open' && existingSession.url) {
+        return {
+          checkoutUrl: existingSession.url,
+          sessionId: existingSession.id,
+        };
+      }
+
+      if (existingSession.status === 'complete') {
+        const err: any = new Error(
+          'This Checkout Session has already completed. Wait for payment confirmation or check your orders.'
+        );
+        err.status = 409;
+        throw err;
+      }
+    }
+
     const lineItems = order.items.map((item) => {
       const food = item.food as { name?: string };
       const foodName = item.foodName || food?.name;
@@ -102,6 +123,9 @@ export const paymentService = {
       err.status = 500;
       throw err;
     }
+
+    order.checkoutSessionId = session.id;
+    await order.save();
 
     return {
       checkoutUrl: session.url,

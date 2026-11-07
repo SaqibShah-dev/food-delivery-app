@@ -7,8 +7,18 @@ import {
 import { useAuth } from '../hooks/useAuth';
 
 export default function AdminRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+        <p role="status" className="text-sm text-slate-500">
+          Checking your session…
+        </p>
+      </main>
+    );
+  }
 
   if (!user) {
     return (

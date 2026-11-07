@@ -58,6 +58,7 @@ export interface IOrder {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   paymentId?: string;
+  checkoutSessionId?: string;
   address: IAddress;
   createdAt?: Date;
   updatedAt?: Date;
