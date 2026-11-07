@@ -40,6 +40,7 @@ interface OrderDetailsModalProps {
   order: IOrder | null;
   updating: boolean;
   onStatusChange: (orderId: string, status: OrderStatus) => void;
+  onMarkCashCollected: (orderId: string) => void;
   onClose: () => void;
 }
 
@@ -47,6 +48,7 @@ export default function OrderDetailsModal({
   order,
   updating,
   onStatusChange,
+  onMarkCashCollected,
   onClose,
 }: OrderDetailsModalProps) {
   useEffect(() => {
@@ -140,6 +142,25 @@ export default function OrderDetailsModal({
               >
                 {formatStatus(order.paymentStatus)}
               </span>
+              <p className="mt-2 text-sm text-slate-600">
+                {order.paymentMethod === "cod"
+                  ? "Cash on delivery"
+                  : "Stripe"}
+              </p>
+              {order.paymentMethod === "cod" &&
+                order.paymentStatus !== "paid" &&
+                order.status !== "cancelled" && (
+                  <button
+                    type="button"
+                    onClick={() => onMarkCashCollected(order._id)}
+                    disabled={updating}
+                    className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {updating
+                      ? "Confirming…"
+                      : "Confirm cash collected"}
+                  </button>
+                )}
             </div>
 
             <div className="rounded-2xl bg-slate-50 p-4">

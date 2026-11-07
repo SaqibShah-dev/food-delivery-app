@@ -11,6 +11,7 @@ export default function OrderConfirmation() {
   const routeState = location.state as {
     orderId?: string;
     totalAmount?: number;
+    paymentMethod?: "stripe" | "cod";
   } | null;
 
   return (
@@ -23,8 +24,9 @@ export default function OrderConfirmation() {
         <h1 className="mt-6 text-3xl font-bold text-slate-900">Order placed</h1>
 
         <p className="mt-3 text-sm text-slate-600">
-          Thank you. Your order has been received and is now pending
-          confirmation.
+          {routeState?.paymentMethod === "cod"
+            ? "Thank you. Your order is confirmed. Please pay the courier when it arrives."
+            : "Thank you. Your order has been received and is now pending confirmation."}
         </p>
 
         {routeState?.orderId && (

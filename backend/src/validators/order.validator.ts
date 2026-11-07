@@ -12,6 +12,7 @@ const orderStatusValues = [
 ] as const;
 
 export const createOrderSchema = z.object({
+  paymentMethod: z.enum(['stripe', 'cod']).default('stripe'),
   items: z
     .array(
       z.object({

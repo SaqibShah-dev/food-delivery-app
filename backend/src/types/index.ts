@@ -29,6 +29,7 @@ export type OrderStatus =
   | 'cancelled';
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentMethod = 'stripe' | 'cod';
 
 export interface IOrderItem {
   food: string;
@@ -51,6 +52,7 @@ export interface IOrder {
   items: IOrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   paymentId?: string;
   address: IAddress;

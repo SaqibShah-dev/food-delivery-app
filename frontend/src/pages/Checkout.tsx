@@ -4,10 +4,11 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
 import { createOrder } from "../api/order";
+import { createCheckoutSession } from "../api/payments";
 import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
 
-import type { IOrderAddress } from "../types";
+import type { IOrderAddress, PaymentMethod } from "../types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -76,6 +77,9 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("stripe");
+  const [stripeOrderId, setStripeOrderId] = useState<string | null>(null);
 
   const updateAddress =
     (field: AddressField) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -108,26 +112,62 @@ export default function Checkout() {
     setSubmitting(true);
 
     try {
-      const response = await createOrder({
-        items: items.map((item) => ({
-          foodId: item.food._id as string,
-          quantity: item.quantity,
-        })),
-        address: {
-          fullName: address.fullName.trim(),
-          phone: address.phone.trim(),
-          street: address.street.trim(),
-          city: address.city.trim(),
-          country: address.country.trim(),
-        },
-      });
+      let orderId = stripeOrderId;
+      let orderTotal: number;
+
+      if (!orderId) {
+        const response = await createOrder({
+          paymentMethod,
+          items: items.map((item) => ({
+            foodId: item.food._id,
+            quantity: item.quantity,
+          })),
+          address: {
+            fullName: address.fullName.trim(),
+            phone: address.phone.trim(),
+            street: address.street.trim(),
+            city: address.city.trim(),
+            country: address.country.trim(),
+          },
+        });
+
+        if (!response.data._id) {
+          throw new Error("The server did not return the new order ID.");
+        }
+
+        orderId = response.data._id;
+        orderTotal = response.data.totalAmount;
+
+        if (paymentMethod === "stripe") {
+          setStripeOrderId(orderId);
+        }
+      } else {
+        orderTotal = totalPrice;
+      }
+
+      if (paymentMethod === "stripe") {
+        try {
+          const checkout = await createCheckoutSession(orderId);
+          clearCart();
+          window.location.assign(checkout.data.checkoutUrl);
+          return;
+        } catch (err: unknown) {
+          setFormError(
+            `${getErrorMessage(
+              err,
+              "Unable to start Stripe Checkout."
+            )} Your order is saved; retry here or pay from My Orders.`
+          );
+          return;
+        }
+      }
 
       clearCart();
-
       navigate("/order-confirmation", {
         state: {
-          orderId: response.data._id,
-          totalAmount: response.data.totalAmount,
+          orderId,
+          totalAmount: orderTotal,
+          paymentMethod,
         },
         replace: true,
       });
@@ -400,6 +440,67 @@ export default function Checkout() {
                 </div>
               </div>
 
+              <fieldset
+                disabled={submitting || stripeOrderId !== null}
+                className="mt-8"
+              >
+                <legend className="text-lg font-bold">
+                  Payment method
+                </legend>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label
+                    className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${
+                      paymentMethod === "stripe"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-slate-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="stripe"
+                      checked={paymentMethod === "stripe"}
+                      onChange={() => setPaymentMethod("stripe")}
+                      className="mt-1 accent-indigo-600"
+                    />
+                    <span>
+                      <span className="block font-semibold">
+                        Pay online with Stripe
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        Secure card payment at checkout.
+                      </span>
+                    </span>
+                  </label>
+
+                  <label
+                    className={`flex cursor-pointer gap-3 rounded-xl border p-4 ${
+                      paymentMethod === "cod"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-slate-200"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === "cod"}
+                      onChange={() => setPaymentMethod("cod")}
+                      className="mt-1 accent-indigo-600"
+                    />
+                    <span>
+                      <span className="block font-semibold">
+                        Cash on delivery
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        Pay the courier when your order arrives.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
               {formError && (
                 <p
                   role="alert"
@@ -415,8 +516,14 @@ export default function Checkout() {
                 className="mt-6 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting
-                  ? "Placing order…"
-                  : `Place order • ${currencyFormatter.format(totalPrice)}`}
+                  ? paymentMethod === "stripe"
+                    ? "Connecting to Stripe…"
+                    : "Placing COD order…"
+                  : stripeOrderId
+                    ? "Retry Stripe Checkout"
+                    : paymentMethod === "stripe"
+                      ? `Continue to Stripe • ${currencyFormatter.format(totalPrice)}`
+                      : `Place COD order • ${currencyFormatter.format(totalPrice)}`}
               </button>
             </form>
 
@@ -464,8 +571,9 @@ export default function Checkout() {
               </dl>
 
               <p className="mt-5 text-xs leading-5 text-slate-500">
-                Your order will be created with a pending payment status. You
-                can update it after payment is added.
+                {paymentMethod === "cod"
+                  ? "Payment stays pending until an administrator confirms cash was collected."
+                  : "Stripe will confirm payment securely before your order is marked paid."}
               </p>
             </aside>
           </div>

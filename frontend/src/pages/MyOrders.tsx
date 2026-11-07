@@ -401,8 +401,8 @@ export default function MyOrders() {
                         )}
                       </p>
 
-                      {order.paymentStatus !==
-                        'paid' && (
+                      {order.paymentStatus !== 'paid' &&
+                        order.paymentMethod !== 'cod' && (
                         <button
                           type="button"
                           onClick={() =>

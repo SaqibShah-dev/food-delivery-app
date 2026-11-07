@@ -17,6 +17,14 @@ export const paymentService = {
       throw err;
     }
 
+    if (order.paymentMethod !== 'stripe') {
+      const err: any = new Error(
+        'This order uses cash on delivery and cannot be paid through Stripe'
+      );
+      err.status = 409;
+      throw err;
+    }
+
     if (order.paymentStatus === 'paid') {
       const err: any = new Error(
         'This order has already been paid'

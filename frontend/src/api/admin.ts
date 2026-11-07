@@ -58,3 +58,13 @@ export const updateOrderStatus = async (
 
   return response.data;
 };
+
+export const confirmCashOnDeliveryPayment = async (
+  orderId: string
+) => {
+  const response = await adminApi.patch<IApiResponse<IOrder>>(
+    `/orders/${orderId}/confirm-cod-payment`
+  );
+
+  return response.data;
+};

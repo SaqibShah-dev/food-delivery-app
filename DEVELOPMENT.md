@@ -72,6 +72,8 @@ The script creates the admin account if it does not already exist, seeds five de
 
 The checkout API creates a session for an existing unpaid order. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. The webhook marks the order as paid; after checkout, the success page also asks the backend to verify the Stripe session directly. Use a newly started checkout session to test this flow.
 
+At checkout, customers can choose Stripe or cash on delivery. COD orders stay pending until an administrator confirms cash collection from the admin order list.
+
 #### Payment troubleshooting
 
 - **`401 Unauthorized` from the checkout endpoint:** sign in again and confirm the request includes `Authorization: Bearer <JWT>`. This is separate from Stripe credentials.

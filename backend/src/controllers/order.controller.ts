@@ -9,12 +9,33 @@ import {
 } from "../validators/order.validator.js";
 
 export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { items, address } = req.body as CreateOrderInput;
+  const { items, address, paymentMethod } = req.body as CreateOrderInput;
 
-  const order = await orderService.createOrder(req.user!.id, items, address);
+  const order = await orderService.createOrder(
+    req.user!.id,
+    items,
+    address,
+    paymentMethod,
+  );
 
   res.status(201).json(apiResponse(order, "Order placed successfully", 201));
 });
+
+export const confirmCashOnDeliveryPayment = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== "string" || !id.trim()) {
+      const err: any = new Error("A valid order ID is required");
+      err.status = 400;
+      throw err;
+    }
+
+    const order = await orderService.markCashOnDeliveryAsPaid(id);
+
+    res.json(apiResponse(order, "Cash on delivery payment recorded"));
+  },
+);
 
 export const getMyOrders = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -124,4 +145,3 @@ export const getRevenueByCategory = asyncHandler(
     );
   }
 );
-

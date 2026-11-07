@@ -100,6 +100,12 @@ const orderSchema = new Schema<IOrderDoc>(
       default: 'pending',
     },
 
+    paymentMethod: {
+      type: String,
+      enum: ['stripe', 'cod'],
+      default: 'stripe',
+    },
+
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'failed', 'refunded'],

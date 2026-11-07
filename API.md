@@ -384,6 +384,7 @@ Request body:
       "quantity": 2
     }
   ],
+  "paymentMethod": "stripe",
   "address": {
     "fullName": "Jane Doe",
     "phone": "+1234567890",
@@ -393,6 +394,8 @@ Request body:
   }
 }
 ```
+
+`paymentMethod` accepts `stripe` or `cod` and defaults to `stripe` when omitted. Cash on delivery orders remain unpaid until an admin confirms cash collection.
 
 Example response:
 
@@ -546,6 +549,20 @@ Example response:
   }
 }
 ```
+
+### Confirm cash on delivery payment (admin)
+
+- Method: `PATCH /orders/:id/confirm-cod-payment`
+- Auth required: Yes, admin only
+- Purpose: records that cash was collected for an unpaid, non-cancelled COD order. Stripe orders cannot be marked paid through this endpoint.
+
+The response contains the updated order with `paymentStatus: "paid"`.
+
+Common errors:
+
+- `403`: admin access required
+- `404`: order not found
+- `409`: order is not COD, is cancelled, or payment status changed
 
 ### Dashboard stats (admin)
 

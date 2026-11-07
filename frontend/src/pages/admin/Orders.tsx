@@ -4,6 +4,7 @@ import axios from 'axios';
 import OrderDetailsModal from '../admin/OrderDetailsModal';
 
 import {
+  confirmCashOnDeliveryPayment,
   getAllOrders,
   updateOrderStatus,
 } from '../../api/admin';
@@ -277,6 +278,60 @@ export default function Orders() {
     }
   };
 
+  const handleCashCollection = async (orderId: string) => {
+    if (updateInProgress.current) {
+      return;
+    }
+
+    const order = orders.find((item) => item._id === orderId);
+
+    if (
+      !order ||
+      order.paymentMethod !== 'cod' ||
+      order.paymentStatus === 'paid' ||
+      order.status === 'cancelled'
+    ) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Confirm that cash was collected for order #${orderId
+          .slice(-8)
+          .toUpperCase()}?`
+      )
+    ) {
+      return;
+    }
+
+    updateInProgress.current = true;
+    setUpdatingOrderId(orderId);
+    setError(null);
+
+    try {
+      const response =
+        await confirmCashOnDeliveryPayment(orderId);
+
+      setOrders((currentOrders) =>
+        currentOrders.map((currentOrder) =>
+          currentOrder._id === orderId
+            ? response.data
+            : currentOrder
+        )
+      );
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(
+          err,
+          'Failed to confirm cash collection.'
+        )
+      );
+    } finally {
+      updateInProgress.current = false;
+      setUpdatingOrderId(null);
+    }
+  };
+
   const controlsDisabled =
     loading || updatingOrderId !== null;
 
@@ -496,6 +551,12 @@ export default function Orders() {
                         </span>
 
                         <span className="text-xs text-gray-500">
+                          {order.paymentMethod === 'cod'
+                            ? 'Cash on delivery'
+                            : 'Stripe'}
+                        </span>
+
+                        <span className="text-xs text-gray-500">
                           {new Date(
                             order.createdAt
                           ).toLocaleDateString(undefined, {
@@ -505,6 +566,23 @@ export default function Orders() {
                           })}
                         </span>
                       </div>
+
+                      {order.paymentMethod === 'cod' &&
+                        order.paymentStatus !== 'paid' &&
+                        order.status !== 'cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleCashCollection(order._id)
+                            }
+                            disabled={isUpdating}
+                            className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isUpdating
+                              ? 'Confirming…'
+                              : 'Confirm cash collected'}
+                          </button>
+                        )}
 
                       <div className="mt-4">
                         <label
@@ -649,15 +727,40 @@ export default function Orders() {
                           </td>
 
                           <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                paymentStyles[
-                                  order.paymentStatus
-                                ]
-                              }`}
-                            >
-                              {order.paymentStatus}
-                            </span>
+                            <div className="space-y-2">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                                  paymentStyles[
+                                    order.paymentStatus
+                                  ]
+                                }`}
+                              >
+                                {order.paymentStatus}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {order.paymentMethod === 'cod'
+                                  ? 'Cash on delivery'
+                                  : 'Stripe'}
+                              </p>
+                              {order.paymentMethod === 'cod' &&
+                                order.paymentStatus !== 'paid' &&
+                                order.status !== 'cancelled' && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void handleCashCollection(
+                                        order._id
+                                      )
+                                    }
+                                    disabled={isUpdating}
+                                    className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {isUpdating
+                                      ? 'Confirming…'
+                                      : 'Confirm cash collected'}
+                                  </button>
+                                )}
+                            </div>
                           </td>
 
                           <td className="px-5 py-4">
@@ -737,6 +840,9 @@ export default function Orders() {
         <OrderDetailsModal
           order={selectedOrder}
           updating={updatingOrderId === selectedOrderId}
+          onMarkCashCollected={(orderId) => {
+            void handleCashCollection(orderId);
+          }}
           onStatusChange={(orderId, status) => {
             void handleStatusChange(orderId, status);
           }}

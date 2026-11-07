@@ -18,6 +18,8 @@ export type PaymentStatus =
   | 'failed'
   | 'refunded';
 
+export type PaymentMethod = 'stripe' | 'cod';
+
 // Standard backend response wrapper
 export interface IApiResponse<T> {
   status: number;
@@ -63,6 +65,7 @@ export interface IOrder {
   items: IOrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
   paymentId?: string;
   address: IAddress;
@@ -176,6 +179,7 @@ export interface IOrderAddress {
 }
 
 export interface ICreateOrderInput {
+  paymentMethod: PaymentMethod;
   items: {
     foodId: string;
     quantity: number;
@@ -194,6 +198,7 @@ export interface IOrderApiResponse {
   }[];
   totalAmount: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
   address: IOrderAddress;
   createdAt?: string;
@@ -220,6 +225,7 @@ export interface IPopulatedOrder {
   items: IPopulatedOrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod;
   paymentStatus: PaymentStatus;
   address: IOrderAddress;
   createdAt: string;

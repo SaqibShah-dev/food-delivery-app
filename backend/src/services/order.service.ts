@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import FoodItem from "../models/FoodItem.model.js";
 import Order from "../models/Order.model.js";
 import { IAddress, IOrderItem } from "../types/index.js";
+import type { PaymentMethod } from "../types/index.js";
 
 type RequestedOrderItem = {
   foodId: string;
@@ -13,6 +14,7 @@ export const orderService = {
     userId: string,
     requestedItems: RequestedOrderItem[],
     address: IAddress,
+    paymentMethod: PaymentMethod = "stripe",
   ) {
     if (!Array.isArray(requestedItems) || requestedItems.length === 0) {
       const err: any = new Error("Your cart must contain at least one item");
@@ -89,6 +91,7 @@ export const orderService = {
       items,
       totalAmount,
       status: "pending",
+      paymentMethod,
       paymentStatus: "pending",
       address,
     });
@@ -235,6 +238,14 @@ export const orderService = {
       throw err;
     }
 
+    if (order.paymentMethod !== "stripe") {
+      const err: any = new Error(
+        "Stripe payment cannot be applied to a cash on delivery order",
+      );
+      err.status = 409;
+      throw err;
+    }
+
     if (
       currency?.toLowerCase() !== "usd" ||
       amountTotal !== Math.round(order.totalAmount * 100)
@@ -261,6 +272,58 @@ export const orderService = {
       { paymentStatus: "paid", paymentId },
       { new: true, runValidators: true },
     );
+
+    if (!updatedOrder) {
+      const err: any = new Error("Order payment status changed unexpectedly");
+      err.status = 409;
+      throw err;
+    }
+
+    return updatedOrder;
+  },
+  async markCashOnDeliveryAsPaid(orderId: string) {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      const err: any = new Error("Order not found");
+      err.status = 404;
+      throw err;
+    }
+
+    if (order.paymentMethod !== "cod") {
+      const err: any = new Error(
+        "Only cash on delivery orders can be marked as cash collected",
+      );
+      err.status = 409;
+      throw err;
+    }
+
+    if (order.status === "cancelled") {
+      const err: any = new Error(
+        "Cancelled orders cannot be marked as paid",
+      );
+      err.status = 409;
+      throw err;
+    }
+
+    if (order.paymentStatus === "paid") {
+      return Order.findById(orderId)
+        .populate("user", "name email")
+        .populate("items.food", "name image category");
+    }
+
+    const updatedOrder = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        paymentMethod: "cod",
+        paymentStatus: { $ne: "paid" },
+        status: { $ne: "cancelled" },
+      },
+      { paymentStatus: "paid" },
+      { new: true, runValidators: true },
+    )
+      .populate("user", "name email")
+      .populate("items.food", "name image category");
 
     if (!updatedOrder) {
       const err: any = new Error("Order payment status changed unexpectedly");

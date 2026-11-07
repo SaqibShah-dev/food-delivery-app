@@ -17,6 +17,7 @@ import {
   getDashboardStats,
   getPopularFood,
   getRevenueByCategory,
+  confirmCashOnDeliveryPayment,
 } from '../controllers/order.controller.js';
 
 const router = express.Router();
@@ -48,6 +49,13 @@ router.patch(
   adminOnly,
   validateBody(updateOrderStatusSchema),
   updateStatus
+);
+
+router.patch(
+  '/:id/confirm-cod-payment',
+  protect,
+  adminOnly,
+  confirmCashOnDeliveryPayment,
 );
 
 export default router;
