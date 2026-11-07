@@ -69,8 +69,8 @@ export const orderService = {
         throw err;
       }
 
-      const unitPrice = food.price;
-      const subtotal = Number((unitPrice * quantity).toFixed(2));
+      const unitPrice = Math.round(food.price * 100) / 100;
+      const subtotal = (Math.round(unitPrice * 100) * quantity) / 100;
 
       return {
         food: food._id.toString(),
@@ -80,9 +80,9 @@ export const orderService = {
       };
     });
 
-    const totalAmount = Number(
-      items.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2),
-    );
+    const totalAmount =
+      items.reduce((sum, item) => sum + Math.round(item.subtotal * 100), 0) /
+      100;
 
     return Order.create({
       user: userId,
@@ -220,18 +220,14 @@ export const orderService = {
     return orders[0] || null;
   },
 
-  async markOrderAsPaid(orderId: string, paymentId: string) {
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      {
-        paymentStatus: "paid",
-        paymentId,
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
+  async markOrderAsPaid(
+    orderId: string,
+    userId: string,
+    paymentId: string,
+    amountTotal: number | null,
+    currency: string | null,
+  ) {
+    const order = await Order.findOne({ _id: orderId, user: userId });
 
     if (!order) {
       const err: any = new Error("Order not found");
@@ -239,7 +235,40 @@ export const orderService = {
       throw err;
     }
 
-    return order;
+    if (
+      currency?.toLowerCase() !== "usd" ||
+      amountTotal !== Math.round(order.totalAmount * 100)
+    ) {
+      const err: any = new Error(
+        "Stripe payment amount does not match the order total",
+      );
+      err.status = 400;
+      throw err;
+    }
+
+    if (order.paymentStatus === "paid") {
+      return order;
+    }
+
+    if (order.status === "cancelled") {
+      const err: any = new Error("Cancelled orders cannot be paid");
+      err.status = 409;
+      throw err;
+    }
+
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: orderId, user: userId, paymentStatus: { $ne: "paid" } },
+      { paymentStatus: "paid", paymentId },
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedOrder) {
+      const err: any = new Error("Order payment status changed unexpectedly");
+      err.status = 409;
+      throw err;
+    }
+
+    return updatedOrder;
   },
   async getDashboardStats() {
     const totalOrdersResult = await Order.aggregate([
@@ -285,8 +314,7 @@ export const orderService = {
   },
   async getPopularFoodItems(limit: number = 10) {
     const results = await Order.aggregate([
-      // Only non-deleted orders
-      { $match: { isDeleted: { $ne: true } } },
+      { $match: { isDeleted: { $ne: true }, paymentStatus: "paid" } },
 
       // Deconstruct items array into separate documents
       { $unwind: "$items" },
@@ -342,8 +370,7 @@ export const orderService = {
   },
   async getRevenueByCategory() {
   const results = await Order.aggregate([
-    // Only non-deleted orders
-    { $match: { isDeleted: { $ne: true } } },
+    { $match: { isDeleted: { $ne: true }, paymentStatus: "paid" } },
 
     // Deconstruct items array
     { $unwind: '$items' },

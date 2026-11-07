@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -74,41 +73,38 @@ export default function Food() {
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLElement>(null);
-  const latestRequest = useRef(0);
   const mutationInProgress = useRef(false);
 
-  const loadItems = useCallback(async () => {
-    const requestId = ++latestRequest.current;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await getAdminFoodItems();
-
-      if (requestId === latestRequest.current) {
-        setItems(response.data);
-      }
-    } catch (err: unknown) {
-      if (requestId === latestRequest.current) {
-        setError(
-          getErrorMessage(err, 'Failed to load food items')
-        );
-      }
-    } finally {
-      if (requestId === latestRequest.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
   useEffect(() => {
+    let active = true;
+
+    const loadItems = async () => {
+      try {
+        const response = await getAdminFoodItems();
+
+        if (active) {
+          setItems(response.data);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        if (active) {
+          setError(
+            getErrorMessage(err, 'Failed to load food items')
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     void loadItems();
 
     return () => {
-      latestRequest.current += 1;
+      active = false;
     };
-  }, [loadItems]);
+  }, []);
 
   useEffect(() => {
     if (editorOpen) {

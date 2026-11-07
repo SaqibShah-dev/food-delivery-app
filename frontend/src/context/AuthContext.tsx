@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -10,21 +9,11 @@ import type { ReactNode } from 'react';
 import type { IAuthUser, ILoginInput } from '../types';
 
 import { getCurrentUser, loginUser } from '../api/auth';
+import { AuthContext } from './auth-context';
 import {
   setAccessToken,
   setUnauthorizedHandler,
 } from '../api/client';
-
-interface IAuthContext {
-  user: IAuthUser | null;
-  loading: boolean;
-  login: (credentials: ILoginInput) => Promise<IAuthUser>;
-  logout: () => void;
-}
-
-export const AuthContext = createContext<IAuthContext | undefined>(
-  undefined
-);
 
 const TOKEN_STORAGE_KEY = 'foodflow-access-token';
 

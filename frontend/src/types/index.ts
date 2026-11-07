@@ -8,6 +8,8 @@ export const ORDER_STATUSES = [
   'cancelled',
 ] as const;
 
+export const MAX_ORDER_ITEM_QUANTITY = 99;
+
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export type PaymentStatus =

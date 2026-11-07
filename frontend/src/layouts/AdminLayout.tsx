@@ -111,7 +111,7 @@ function CloseIcon() {
 }
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const closeSidebar = () => setSidebarOpen(false);

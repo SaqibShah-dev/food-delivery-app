@@ -77,6 +77,8 @@ export default function Orders() {
 
   const latestRequest = useRef(0);
   const updateInProgress = useRef(false);
+  const pollInProgress = useRef(false);
+  const foregroundRequestInProgress = useRef(false);
   const appliedFilters = useRef<IOrderFilters>({});
 
   const selectedOrder =
@@ -88,11 +90,16 @@ export default function Orders() {
   };
 
   const loadOrders = useCallback(
-    async (filters: IOrderFilters = {}) => {
+    async (
+      filters: IOrderFilters = {},
+      showLoading = true
+    ) => {
       const requestId = ++latestRequest.current;
 
-      setLoading(true);
-      setError(null);
+      if (showLoading) {
+        foregroundRequestInProgress.current = true;
+        setLoading(true);
+      }
 
       try {
         const response = await getAllOrders(filters);
@@ -102,6 +109,7 @@ export default function Orders() {
         }
 
         setOrders(response.data);
+        setError(null);
         appliedFilters.current = { ...filters };
       } catch (err: unknown) {
         if (requestId === latestRequest.current) {
@@ -112,6 +120,7 @@ export default function Orders() {
       } finally {
         if (requestId === latestRequest.current) {
           setLoading(false);
+          foregroundRequestInProgress.current = false;
         }
       }
     },
@@ -119,11 +128,58 @@ export default function Orders() {
   );
 
   useEffect(() => {
-    void loadOrders();
+    let active = true;
+
+    const loadInitialOrders = async () => {
+      try {
+        const response = await getAllOrders();
+
+        if (active) {
+          setOrders(response.data);
+          setError(null);
+          appliedFilters.current = {};
+        }
+      } catch (err: unknown) {
+        if (active) {
+          setError(
+            getErrorMessage(err, 'Failed to load orders.')
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadInitialOrders();
 
     return () => {
+      active = false;
       latestRequest.current += 1;
     };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState !== 'visible' ||
+        updateInProgress.current ||
+        pollInProgress.current ||
+        foregroundRequestInProgress.current
+      ) {
+        return;
+      }
+
+      pollInProgress.current = true;
+      void loadOrders(appliedFilters.current, false).finally(
+        () => {
+          pollInProgress.current = false;
+        }
+      );
+    }, 10_000);
+
+    return () => window.clearInterval(intervalId);
   }, [loadOrders]);
 
   const handleApplyFilters = () => {
@@ -136,6 +192,7 @@ export default function Orders() {
     }
 
     const filters: IOrderFilters = {};
+    setError(null);
 
     if (statusFilter) {
       filters.status = statusFilter;
@@ -156,6 +213,7 @@ export default function Orders() {
     setStatusFilter('');
     setStartDate('');
     setEndDate('');
+    setError(null);
 
     void loadOrders();
   };

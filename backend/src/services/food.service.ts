@@ -1,6 +1,9 @@
 import FoodItem from "../models/FoodItem.model.js";
 import { IFoodItem } from "../types/index.js";
 
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const foodService = {
   async getAllAvailable(options: {
     page: number;
@@ -16,14 +19,14 @@ export const foodService = {
 
     if (category) {
       filter.category = {
-        $regex: `^${category}$`,
+        $regex: `^${escapeRegex(category)}$`,
         $options: "i",
       };
     }
 
     if (search) {
       filter.name = {
-        $regex: search,
+        $regex: escapeRegex(search),
         $options: "i",
       };
     }

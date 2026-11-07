@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { useCart } from "../hooks/useCart";
 import { getFoodImageUrl } from "../api/food";
+import { MAX_ORDER_ITEM_QUANTITY } from "../types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -109,6 +110,7 @@ export default function Cart() {
                           type="button"
                           aria-label={`Increase ${food.name} quantity`}
                           onClick={() => updateQuantity(food._id, quantity + 1)}
+                          disabled={quantity >= MAX_ORDER_ITEM_QUANTITY}
                           className="px-3 py-2 text-lg font-semibold hover:bg-slate-100"
                         >
                           +

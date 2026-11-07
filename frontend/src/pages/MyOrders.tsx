@@ -79,16 +79,13 @@ export default function MyOrders() {
 
   useEffect(() => {
     if (!user) {
-      setLoadingOrders(false);
       return;
     }
 
     const controller = new AbortController();
+    let pollInProgress = false;
 
     const loadOrders = async () => {
-      setLoadingOrders(true);
-      setError(null);
-
       try {
         const response = await getMyOrders(
           controller.signal
@@ -96,6 +93,7 @@ export default function MyOrders() {
 
         if (!controller.signal.aborted) {
           setOrders(response.data);
+          setError(null);
         }
       } catch (err: unknown) {
         if (!controller.signal.aborted) {
@@ -115,8 +113,23 @@ export default function MyOrders() {
 
     void loadOrders();
 
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState !== 'visible' ||
+        pollInProgress
+      ) {
+        return;
+      }
+
+      pollInProgress = true;
+      void loadOrders().finally(() => {
+        pollInProgress = false;
+      });
+    }, 10_000);
+
     return () => {
       controller.abort();
+      window.clearInterval(intervalId);
     };
   }, [user, retryCount]);
 
@@ -129,8 +142,7 @@ export default function MyOrders() {
         orderId
       );
 
-      window.location.href =
-        response.data.checkoutUrl;
+      window.location.assign(response.data.checkoutUrl);
     } catch (err: unknown) {
       setPaymentError(
         getErrorMessage(
@@ -216,6 +228,15 @@ export default function MyOrders() {
           </p>
         )}
 
+        {error && orders.length > 0 && (
+          <p
+            role="alert"
+            className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {error} We’ll retry automatically.
+          </p>
+        )}
+
         {loadingOrders ? (
           <div
             role="status"
@@ -223,7 +244,7 @@ export default function MyOrders() {
           >
             Loading your orders…
           </div>
-        ) : error ? (
+        ) : error && orders.length === 0 ? (
           <div
             role="alert"
             className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-8 text-center"
@@ -233,7 +254,11 @@ export default function MyOrders() {
             <button
               type="button"
               onClick={() =>
-                setRetryCount((current) => current + 1)
+                {
+                  setLoadingOrders(true);
+                  setError(null);
+                  setRetryCount((current) => current + 1);
+                }
               }
               className="mt-5 rounded-xl bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-800"
             >

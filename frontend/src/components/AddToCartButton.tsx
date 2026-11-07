@@ -13,10 +13,17 @@ export default function AddToCartButton({
   food,
   className = "",
 }: AddToCartButtonProps) {
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
   const [added, setAdded] = useState(false);
+  const quantityInCart =
+    items.find((item) => item.food._id === food._id)?.quantity ?? 0;
+  const quantityLimitReached = quantityInCart >= 99;
 
   const handleClick = () => {
+    if (quantityLimitReached) {
+      return;
+    }
+
     addItem(food);
     setAdded(true);
 
@@ -29,13 +36,23 @@ export default function AddToCartButton({
     <button
       type="button"
       onClick={handleClick}
+      disabled={quantityLimitReached}
+      aria-label={
+        quantityLimitReached
+          ? `${food.name} quantity limit reached`
+          : `Add ${food.name} to cart`
+      }
       className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
         added
           ? "bg-emerald-600 text-white"
           : "bg-indigo-600 text-white hover:bg-indigo-700"
-      } ${className}`}
+      } disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
-      {added ? "Added to cart" : "Add to cart"}
+      {quantityLimitReached
+        ? "Quantity limit reached"
+        : added
+          ? "Added to cart"
+          : "Add to cart"}
     </button>
   );
 }

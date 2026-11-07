@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -9,20 +8,9 @@ import {
 import type { ReactNode } from 'react';
 
 import type { ICartItem, IFoodItem } from '../types';
+import { CartContext } from './cart-context';
 
-interface ICartContext {
-  items: ICartItem[];
-  totalItems: number;
-  totalPrice: number;
-  addItem: (food: IFoodItem) => void;
-  updateQuantity: (foodId: string, quantity: number) => void;
-  removeItem: (foodId: string) => void;
-  clearCart: () => void;
-}
-
-export const CartContext = createContext<ICartContext | undefined>(
-  undefined
-);
+const MAX_ITEM_QUANTITY = 99;
 
 const CART_STORAGE_KEY = 'foodflow-cart';
 
@@ -46,7 +34,8 @@ function readStoredCart(): ICartItem[] {
         typeof item === 'object' &&
         Boolean((item as ICartItem).food?._id) &&
         typeof (item as ICartItem).quantity === 'number' &&
-        (item as ICartItem).quantity > 0
+        (item as ICartItem).quantity > 0 &&
+        (item as ICartItem).quantity <= MAX_ITEM_QUANTITY
     );
   } catch {
     return [];
@@ -67,6 +56,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
 
       if (existingItem) {
+        if (existingItem.quantity >= MAX_ITEM_QUANTITY) {
+          return currentItems;
+        }
+
         return currentItems.map((item) =>
           item.food._id === food._id
             ? { ...item, quantity: item.quantity + 1 }
@@ -80,6 +73,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(
     (foodId: string, quantity: number) => {
+      if (!Number.isInteger(quantity)) {
+        return;
+      }
+
       setItems((currentItems) => {
         if (quantity <= 0) {
           return currentItems.filter(
@@ -89,7 +86,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         return currentItems.map((item) =>
           item.food._id === foodId
-            ? { ...item, quantity }
+            ? {
+                ...item,
+                quantity: Math.min(quantity, MAX_ITEM_QUANTITY),
+              }
             : item
         );
       });

@@ -30,7 +30,7 @@ app.use(
 
 
 app.use(
-  '/api/payments/webhook',
+  ['/api/payment/webhook', '/api/payments/webhook'],
   express.raw({ type: 'application/json' }),
   paymentWebhookRoutes
 );

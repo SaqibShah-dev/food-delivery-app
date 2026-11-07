@@ -9,7 +9,7 @@ export const paymentService = {
     const order = await Order.findOne({
       _id: orderId,
       user: userId,
-    }).populate('items.food', 'name price image');
+    }).populate('items.food', 'name');
 
     if (!order) {
       const err: any = new Error('Order not found');
@@ -34,12 +34,14 @@ export const paymentService = {
     }
 
     const lineItems = order.items.map((item) => {
-      const food = item.food as {
-        name?: string;
-        price?: number;
-      };
+      const food = item.food as { name?: string };
+      const unitAmount = Math.round(item.unitPrice * 100);
 
-      if (!food?.name || typeof food.price !== 'number') {
+      if (
+        !food?.name ||
+        !Number.isSafeInteger(unitAmount) ||
+        unitAmount <= 0
+      ) {
         const err: any = new Error(
           'Order contains invalid food data'
         );
@@ -53,11 +55,24 @@ export const paymentService = {
           product_data: {
             name: food.name,
           },
-          unit_amount: Math.round(food.price * 100),
+          unit_amount: unitAmount,
         },
         quantity: item.quantity,
       };
     });
+
+    const checkoutTotal = lineItems.reduce(
+      (total, item) => total + item.price_data.unit_amount * item.quantity,
+      0
+    );
+
+    if (checkoutTotal !== Math.round(order.totalAmount * 100)) {
+      const err: any = new Error(
+        'Order items do not match the saved order total'
+      );
+      err.status = 409;
+      throw err;
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

@@ -4,6 +4,7 @@ import { apiResponse } from '../utils/apiResponse.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
 import { paymentService } from '../services/payment.service.js';
 import { orderService } from '../services/order.service.js';
+import Stripe from 'stripe';
 
 export const createCheckoutSession = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -48,36 +49,27 @@ export const handleWebhook = asyncHandler(
     if (
       event.type === 'checkout.session.completed'
     ) {
-      const session = event.data.object as {
-        id: string;
-        metadata?: {
-          orderId?: string;
-          userId?: string;
-        };
-      };
+      const session = event.data.object as Stripe.Checkout.Session;
 
       const orderId = session.metadata?.orderId;
       const userId = session.metadata?.userId;
 
       if (!orderId || !userId) {
-        console.warn(
-          'Stripe session missing order metadata:',
-          session.id
+        const err: any = new Error(
+          `Stripe checkout session ${session.id} is missing order metadata`
         );
-      } else {
-        const order =
-          await orderService.getById(orderId);
+        err.status = 400;
+        throw err;
+      }
 
-        if (
-          order &&
-          String(order.user._id) === userId &&
-          order.paymentStatus !== 'paid'
-        ) {
-          await orderService.markOrderAsPaid(
-            orderId,
-            session.id
-          );
-        }
+      if (session.payment_status === 'paid') {
+        await orderService.markOrderAsPaid(
+          orderId,
+          userId,
+          session.id,
+          session.amount_total,
+          session.currency
+        );
       }
     }
 
