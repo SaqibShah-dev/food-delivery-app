@@ -152,6 +152,8 @@ CLIENT_URL=http://localhost:5173
 
 Replace the Stripe placeholders with your test-mode secret key and webhook signing secret. See [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe CLI setup and payment troubleshooting.
 
+To create local demo food items and an admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env`, then run `npm run seed` from the `backend/` directory. See [DEVELOPMENT.md](DEVELOPMENT.md#seed-demo-data-and-an-admin-account) for details.
+
 ### 3. Install dependencies
 
 ```bash

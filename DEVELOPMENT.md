@@ -45,6 +45,17 @@ CLIENT_URL=http://localhost:5173
 
 The app validates these values in `backend/src/config/env.ts` and exits on startup if any required variable is missing.
 
+#### Seed demo data and an admin account
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env` (the password must be at least 8 characters), then run:
+
+```bash
+cd backend
+npm run seed
+```
+
+The script creates the admin account if it does not already exist, seeds five demo food items, and writes their local SVG images under `backend/uploads`. It is safe to rerun: matching demo items are updated and an existing admin password is left unchanged. If the email already belongs to a non-admin account, seeding stops without changing that account. The script refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=true` is explicitly set.
+
 #### Configure Stripe for local payments
 
 1. In the Stripe Dashboard, enable **test mode** and copy the test **secret key** (`sk_test_...`) into `STRIPE_SECRET_KEY`. Do not use a publishable key (`pk_...`) or webhook signing secret (`whsec_...`) as the API key. Replace the example value; it is only a placeholder.
