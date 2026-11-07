@@ -78,7 +78,7 @@ export const paymentService = {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
-      success_url: `${env.CLIENT_URL}/payment/success?order_id=${order._id}`,
+      success_url: `${env.CLIENT_URL}/payment/success?order_id=${order._id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${env.CLIENT_URL}/payment/cancel?order_id=${order._id}`,
       metadata: {
         orderId: order._id.toString(),
@@ -98,6 +98,29 @@ export const paymentService = {
       checkoutUrl: session.url,
       sessionId: session.id,
     };
+  },
+
+  async retrievePaidCheckoutSession(userId: string, sessionId: string) {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const orderId = session.metadata?.orderId;
+
+    if (!orderId || session.metadata?.userId !== userId) {
+      const err: any = new Error(
+        'Checkout session does not belong to this user'
+      );
+      err.status = 404;
+      throw err;
+    }
+
+    if (session.payment_status !== 'paid') {
+      const err: any = new Error(
+        'Stripe has not confirmed payment for this checkout session'
+      );
+      err.status = 409;
+      throw err;
+    }
+
+    return { orderId, session };
   },
 
   async constructWebhookEvent(

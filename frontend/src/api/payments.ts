@@ -7,6 +7,11 @@ interface ICheckoutSessionResponse {
   sessionId: string;
 }
 
+interface IConfirmCheckoutSessionResponse {
+  orderId: string;
+  paymentStatus: 'paid';
+}
+
 export async function createCheckoutSession(
   orderId: string
 ) {
@@ -15,6 +20,14 @@ export async function createCheckoutSession(
   >('/payment/create-checkout-session', {
     orderId,
   });
+
+  return response.data;
+}
+
+export async function confirmCheckoutSession(sessionId: string) {
+  const response = await api.post<
+    IApiResponse<IConfirmCheckoutSessionResponse>
+  >('/payment/confirm-checkout-session', { sessionId });
 
   return response.data;
 }

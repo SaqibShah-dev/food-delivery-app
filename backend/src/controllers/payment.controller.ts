@@ -34,6 +34,42 @@ export const createCheckoutSession = asyncHandler(
   }
 );
 
+export const confirmCheckoutSession = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { sessionId } = req.body as { sessionId?: string };
+
+    if (
+      typeof sessionId !== 'string' ||
+      !/^cs_(test|live)_[A-Za-z0-9]+$/.test(sessionId)
+    ) {
+      const err: any = new Error('A valid Stripe sessionId is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const { orderId, session } =
+      await paymentService.retrievePaidCheckoutSession(
+        req.user!.id,
+        sessionId
+      );
+
+    await orderService.markOrderAsPaid(
+      orderId,
+      req.user!.id,
+      session.id,
+      session.amount_total,
+      session.currency
+    );
+
+    res.json(
+      apiResponse(
+        { orderId, paymentStatus: 'paid' },
+        'Payment confirmed'
+      )
+    );
+  }
+);
+
 export const handleWebhook = asyncHandler(
   async (req: Request, res: Response) => {
     const signature = req.headers[
@@ -45,6 +81,10 @@ export const handleWebhook = asyncHandler(
         req.body as Buffer,
         signature
       );
+
+    console.info(
+      `[Stripe] Received event ${event.type} (${event.id})`
+    );
 
     if (
       event.type === 'checkout.session.completed'
@@ -69,6 +109,13 @@ export const handleWebhook = asyncHandler(
           session.id,
           session.amount_total,
           session.currency
+        );
+        console.info(
+          `[Stripe] Marked order ${orderId} as paid`
+        );
+      } else {
+        console.info(
+          `[Stripe] Checkout session ${session.id} is not paid`
         );
       }
     }

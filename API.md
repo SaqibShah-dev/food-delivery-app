@@ -602,6 +602,27 @@ Common errors:
 - `404`: order not found or does not belong to the authenticated user
 - `502`: Stripe rejected the configured secret key
 
+### Confirm a Stripe checkout session
+
+- Method: `POST /payment/confirm-checkout-session`
+- Auth required: Yes
+- Purpose: retrieves the checkout session from Stripe, verifies that it belongs to the authenticated user and is paid, then marks the associated order as paid. The payment success page calls this endpoint as a fallback if webhook delivery is delayed or unavailable.
+
+Request body:
+
+```json
+{
+  "sessionId": "cs_test_123"
+}
+```
+
+Common errors:
+
+- `400`: missing or invalid Stripe session ID
+- `401`: missing or invalid JWT
+- `404`: checkout session does not belong to the authenticated user
+- `409`: Stripe has not confirmed payment
+
 ### Stripe webhook
 
 - Method: `POST /payment/webhook`

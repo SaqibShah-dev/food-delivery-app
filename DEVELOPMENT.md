@@ -51,7 +51,7 @@ The app validates these values in `backend/src/config/env.ts` and exits on start
 2. Install and authenticate the [Stripe CLI](https://docs.stripe.com/stripe-cli), then forward webhook events to the local backend:
 
    ```bash
-   stripe listen --forward-to localhost:5000/api/payment/webhook
+   stripe listen --events checkout.session.completed --forward-to http://localhost:5000/api/payment/webhook
    ```
 
    The backend also accepts the legacy `/api/payments/webhook` path. Configure new Stripe destinations with the singular `/api/payment/webhook` URL.
@@ -59,13 +59,13 @@ The app validates these values in `backend/src/config/env.ts` and exits on start
 3. Copy the webhook signing secret printed by the CLI (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
 4. Restart the backend after changing `backend/.env`. Keep the CLI listener running while testing payments.
 
-The checkout API creates a session for an existing unpaid order. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. After a successful test payment, the webhook marks the order as paid.
+The checkout API creates a session for an existing unpaid order. The frontend calls `POST /api/payment/create-checkout-session` with the order ID and redirects the customer to Stripe Checkout. The webhook marks the order as paid; after checkout, the success page also asks the backend to verify the Stripe session directly. Use a newly started checkout session to test this flow.
 
 #### Payment troubleshooting
 
 - **`401 Unauthorized` from the checkout endpoint:** sign in again and confirm the request includes `Authorization: Bearer <JWT>`. This is separate from Stripe credentials.
 - **`502 Bad Gateway` with “Payment provider authentication failed”:** Stripe rejected `STRIPE_SECRET_KEY`. Check that it is an active secret key from the correct Stripe account and mode; replace placeholders or revoked keys, then restart the backend.
-- **Webhook signature errors:** ensure the Stripe CLI listener is running and `STRIPE_WEBHOOK_SECRET` matches the current listener. The CLI may generate a different signing secret each time it starts.
+- **Webhook signature errors:** ensure the Stripe CLI listener is running and `STRIPE_WEBHOOK_SECRET` matches the signing secret printed by that listener.
 - **Checkout opens but the order remains pending:** verify that `checkout.session.completed` events are forwarded to `/api/payment/webhook` (or the legacy `/api/payments/webhook`) and check the backend logs for webhook errors. The admin orders list refreshes automatically every 10 seconds while open.
 
 ### 4. Install frontend dependencies
