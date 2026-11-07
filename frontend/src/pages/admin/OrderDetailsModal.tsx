@@ -232,8 +232,9 @@ export default function OrderDetailsModal({
                   className="flex items-center gap-4 p-4"
                 >
                   {/* <img
-                    src={item.food?.image}
+                    src={item.foodImage || item.food?.image}
                     alt={
+                      item.foodName ||
                       item.food?.name ||
                       'Unavailable food item'
                     }
@@ -241,15 +242,15 @@ export default function OrderDetailsModal({
                     className="h-16 w-16 flex-shrink-0 rounded-xl bg-slate-100 object-cover"
                   /> */}
                   <img
-                    src={getFoodImageUrl(item.food?.image || "")}
-                    alt={item.food?.name || "Unavailable food item"}
+                    src={getFoodImageUrl(item.foodImage || item.food?.image || "")}
+                    alt={item.foodName || item.food?.name || "Unavailable food item"}
                     loading="lazy"
                     className="h-16 w-16 flex-shrink-0 rounded-xl bg-slate-100 object-cover"
                   />
 
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">
-                      {item.food?.name || "Unavailable item"}
+                      {item.foodName || item.food?.name || "Unavailable item"}
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">

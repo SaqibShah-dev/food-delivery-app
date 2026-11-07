@@ -34,6 +34,9 @@ export type PaymentMethod = 'stripe' | 'cod';
 export interface IOrderItem {
   food: string;
   quantity: number;
+  foodName?: string;
+  foodImage?: string;
+  foodCategory?: string;
   unitPrice: number;
   subtotal: number;
 }

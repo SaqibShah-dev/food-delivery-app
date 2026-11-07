@@ -396,6 +396,7 @@ Request body:
 ```
 
 `paymentMethod` accepts `stripe` or `cod` and defaults to `stripe` when omitted. Cash on delivery orders remain unpaid until an admin confirms cash collection.
+Each new order item also stores the food name, image, category, unit price, and subtotal as order-time snapshots. The food ID remains available as `food` for reference; subsequent menu edits do not change the order's historical item details.
 
 Example response:
 
@@ -409,6 +410,9 @@ Example response:
     "items": [
       {
         "food": "64c0e1f4d3a5bc0425d1f3b1",
+        "foodName": "Classic Burger",
+        "foodImage": "/uploads/classic-burger.svg",
+        "foodCategory": "Burgers",
         "quantity": 2,
         "unitPrice": 14.99,
         "subtotal": 29.98

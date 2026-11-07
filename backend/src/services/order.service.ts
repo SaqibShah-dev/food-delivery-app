@@ -77,6 +77,9 @@ export const orderService = {
       return {
         food: food._id.toString(),
         quantity,
+        foodName: food.name,
+        foodImage: food.image,
+        foodCategory: food.category,
         unitPrice,
         subtotal,
       };
@@ -386,6 +389,9 @@ export const orderService = {
       {
         $group: {
           _id: "$items.food",
+          name: { $first: "$items.foodName" },
+          image: { $first: "$items.foodImage" },
+          category: { $first: "$items.foodCategory" },
           totalQuantity: { $sum: "$items.quantity" },
           totalRevenue: { $sum: "$items.subtotal" },
           orderCount: { $sum: 1 },
@@ -408,17 +414,16 @@ export const orderService = {
         },
       },
 
-      // Flatten the joined food data
-      { $unwind: "$food" },
-
       // Shape the output
       {
         $project: {
           _id: 0,
           foodId: "$_id",
-          name: "$food.name",
-          image: "$food.image",
-          category: "$food.category",
+          name: { $ifNull: ["$name", { $arrayElemAt: ["$food.name", 0] }] },
+          image: { $ifNull: ["$image", { $arrayElemAt: ["$food.image", 0] }] },
+          category: {
+            $ifNull: ["$category", { $arrayElemAt: ["$food.category", 0] }],
+          },
           totalQuantity: 1,
           totalRevenue: 1,
           orderCount: 1,
@@ -448,13 +453,22 @@ export const orderService = {
       },
     },
 
-    // Flatten the joined food data
-    { $unwind: '$foodDetails' },
+    {
+      $addFields: {
+        category: {
+          $ifNull: [
+            '$items.foodCategory',
+            { $arrayElemAt: ['$foodDetails.category', 0] },
+          ],
+        },
+      },
+    },
+    { $match: { category: { $ne: null } } },
 
     // Group by category
     {
       $group: {
-        _id: '$foodDetails.category',
+        _id: '$category',
         totalRevenue: { $sum: '$items.subtotal' },
         totalQuantity: { $sum: '$items.quantity' },
         orderCount: { $sum: 1 },

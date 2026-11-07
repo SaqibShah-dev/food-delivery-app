@@ -43,10 +43,11 @@ export const paymentService = {
 
     const lineItems = order.items.map((item) => {
       const food = item.food as { name?: string };
+      const foodName = item.foodName || food?.name;
       const unitAmount = Math.round(item.unitPrice * 100);
 
       if (
-        !food?.name ||
+        !foodName ||
         !Number.isSafeInteger(unitAmount) ||
         unitAmount <= 0
       ) {
@@ -61,7 +62,7 @@ export const paymentService = {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: food.name,
+            name: foodName,
           },
           unit_amount: unitAmount,
         },

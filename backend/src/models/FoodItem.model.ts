@@ -15,6 +15,11 @@ const foodItemSchema = new Schema<IFoodItemDoc>(
   { timestamps: true }
 );
 
+foodItemSchema.index(
+  { isAvailable: 1, createdAt: -1 },
+  { name: 'food_available_by_date' }
+);
+
 export const FoodItem: Model<IFoodItemDoc> =
   mongoose.models.FoodItem ||
   mongoose.model<IFoodItemDoc>('FoodItem', foodItemSchema);

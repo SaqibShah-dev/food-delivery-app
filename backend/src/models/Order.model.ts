@@ -19,6 +19,18 @@ const orderItemSchema = new Schema(
       required: true,
       min: 1,
     },
+    foodName: {
+      type: String,
+      trim: true,
+    },
+    foodImage: {
+      type: String,
+      trim: true,
+    },
+    foodCategory: {
+      type: String,
+      trim: true,
+    },
     unitPrice: {
       type: Number,
       required: true,
@@ -122,6 +134,23 @@ const orderSchema = new Schema<IOrderDoc>(
     },
   },
   { timestamps: true }
+);
+
+orderSchema.index(
+  { createdAt: -1 },
+  { name: 'orders_by_date' }
+);
+orderSchema.index(
+  { user: 1, createdAt: -1 },
+  { name: 'orders_by_user_and_date' }
+);
+orderSchema.index(
+  { status: 1, createdAt: -1 },
+  { name: 'orders_by_status_and_date' }
+);
+orderSchema.index(
+  { user: 1, paymentStatus: 1, totalAmount: 1, createdAt: -1 },
+  { name: 'orders_legacy_payment_lookup' }
 );
 
 export const Order: Model<IOrderDoc> =

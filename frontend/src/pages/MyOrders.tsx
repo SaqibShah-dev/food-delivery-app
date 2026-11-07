@@ -335,21 +335,21 @@ export default function MyOrders() {
                     {order.items.map(
                       (item, index) => (
                         <li
-                          key={`${order._id}-${item.food._id}-${index}`}
+                          key={`${order._id}-${item.food?._id ?? index}`}
                           className="flex items-center gap-4"
                         >
                           <img
                             src={getFoodImageUrl(
-                              item.food.image
+                              item.foodImage || item.food?.image || ''
                             )}
-                            alt={item.food.name}
+                            alt={item.foodName || item.food?.name || 'Unavailable item'}
                             loading="lazy"
                             className="h-16 w-16 rounded-xl bg-slate-100 object-cover"
                           />
 
                           <div className="min-w-0 flex-1">
                             <p className="font-semibold">
-                              {item.food.name}
+                              {item.foodName || item.food?.name || 'Unavailable item'}
                             </p>
 
                             <p className="mt-0.5 text-xs text-slate-500">

@@ -74,6 +74,8 @@ The checkout API creates a session for an existing unpaid order. The frontend ca
 
 At checkout, customers can choose Stripe or cash on delivery. COD orders stay pending until an administrator confirms cash collection from the admin order list.
 
+MongoDB indexes for customer order history, admin order filtering, legacy payment lookup, and available food listing are declared on the Mongoose schemas and are created by Mongoose when the models initialize. New order items preserve the food name, image, category, unit price, and subtotal as snapshots so later menu edits do not alter historical order details or reporting.
+
 #### Payment troubleshooting
 
 - **`401 Unauthorized` from the checkout endpoint:** sign in again and confirm the request includes `Authorization: Bearer <JWT>`. This is separate from Stripe credentials.

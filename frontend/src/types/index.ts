@@ -54,6 +54,9 @@ export interface IOrderFood {
 export interface IOrderItem {
   food: IOrderFood | null;
   quantity: number;
+  foodName?: string;
+  foodImage?: string;
+  foodCategory?: string;
   unitPrice: number;
   subtotal: number;
 }
@@ -193,6 +196,9 @@ export interface IOrderApiResponse {
   items: {
     food: string;
     quantity: number;
+    foodName?: string;
+    foodImage?: string;
+    foodCategory?: string;
     unitPrice: number;
     subtotal: number;
   }[];
@@ -209,8 +215,11 @@ export interface IPopulatedOrderItem {
     name: string;
     image: string;
     category: string;
-  };
+  } | null;
   quantity: number;
+  foodName?: string;
+  foodImage?: string;
+  foodCategory?: string;
   unitPrice: number;
   subtotal: number;
 }
