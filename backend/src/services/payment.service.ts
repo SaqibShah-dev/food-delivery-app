@@ -153,6 +153,24 @@ export const paymentService = {
       throw err;
     }
 
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) {
+      const err: any = new Error('Order not found');
+      err.status = 404;
+      throw err;
+    }
+
+    if (
+      order.checkoutSessionId &&
+      order.checkoutSessionId !== session.id
+    ) {
+      const err: any = new Error(
+        'Checkout Session does not match the session created for this order'
+      );
+      err.status = 409;
+      throw err;
+    }
+
     return { orderId, session };
   },
 
@@ -168,10 +186,20 @@ export const paymentService = {
       throw err;
     }
 
-    return stripe.webhooks.constructEvent(
-      body,
-      signature,
-      env.STRIPE_WEBHOOK_SECRET
-    );
+    try {
+      return stripe.webhooks.constructEvent(
+        body,
+        signature,
+        env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeSignatureVerificationError) {
+        const invalidSignature = new Error('Invalid Stripe signature');
+        Object.assign(invalidSignature, { status: 400 });
+        throw invalidSignature;
+      }
+
+      throw error;
+    }
   },
 };

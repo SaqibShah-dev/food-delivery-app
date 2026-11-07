@@ -5,7 +5,6 @@ export const authService = {
     name: string;
     email: string;
     password: string;
-    role?: 'user' | 'admin';
   }) {
     const existing = await User.findOne({ email: data.email });
     if (existing) {
@@ -14,7 +13,7 @@ export const authService = {
       throw err;
     }
 
-    const user = await User.create(data);
+    const user = await User.create({ ...data, role: 'user' });
     return user;
   },
 

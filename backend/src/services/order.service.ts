@@ -269,6 +269,17 @@ export const orderService = {
     }
 
     if (
+      order.checkoutSessionId &&
+      order.checkoutSessionId !== paymentId
+    ) {
+      const err: any = new Error(
+        "Stripe Checkout Session does not match the session created for this order",
+      );
+      err.status = 409;
+      throw err;
+    }
+
+    if (
       currency?.toLowerCase() !== "usd" ||
       amountTotal !== Math.round(order.totalAmount * 100)
     ) {
@@ -279,10 +290,7 @@ export const orderService = {
       throw err;
     }
 
-    if (
-      order.paymentStatus === "paid" &&
-      (!order.paymentId || order.paymentId === paymentId)
-    ) {
+    if (order.paymentStatus === "paid" && order.paymentId === paymentId) {
       return order;
     }
 
@@ -315,7 +323,7 @@ export const orderService = {
       const latestOrder = await Order.findOne({ _id: orderId, user: userId });
       if (
         latestOrder?.paymentStatus === "paid" &&
-        (!latestOrder.paymentId || latestOrder.paymentId === paymentId)
+        latestOrder.paymentId === paymentId
       ) {
         return latestOrder;
       }

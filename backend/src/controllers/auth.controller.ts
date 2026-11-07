@@ -25,7 +25,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     name,
     email,
     password,
-    role: 'user',
   });
 
   const token = generateToken(user);
