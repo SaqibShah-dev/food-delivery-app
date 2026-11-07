@@ -6,7 +6,7 @@ This guide explains how to set up the project locally, run it in development mod
 
 Before you begin, make sure you have:
 
-- Node.js 18+
+- Node.js 20.19+ or 22.12+
 - npm
 - MongoDB running locally or a MongoDB Atlas database
 - Git
@@ -94,6 +94,18 @@ npm install
 
 ## Run the App
 
+### Run with Docker Compose
+
+Configure `backend/.env` with the required backend values, including `JWT_SECRET`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`, then run from the repository root:
+
+```bash
+docker compose up --build
+```
+
+Compose starts MongoDB, the API, and the Nginx-served frontend. Open `http://localhost:5173`; the API is available at `http://localhost:5000`. The Compose configuration connects the backend to its MongoDB service and persists MongoDB data and uploaded files in named volumes. MongoDB is published only on the local loopback interface. For a non-local frontend origin, set `VITE_API_BASE_URL` to the browser-reachable API URL before building.
+
+The Dockerfiles can also be built independently. The frontend image accepts `VITE_API_BASE_URL` as a build argument; it must point to an API URL reachable by the user's browser, not merely by another container.
+
 ### Start the backend
 
 ```bash
@@ -123,6 +135,30 @@ http://localhost:5173
 ```
 
 ## Common Commands
+
+### Automated tests
+
+The backend and frontend test suites run without connecting to MongoDB or Stripe. Backend integration tests use Supertest with mocked service/database and Stripe boundaries; `backend/test/setup.ts` supplies test-only environment placeholders before importing the app. Do not put live credentials in test configuration.
+
+Install dependencies with `npm ci` in each project directory, then run:
+
+```bash
+# Backend
+cd backend
+npm run typecheck
+npm run typecheck:test
+npm test
+npm run test:coverage
+
+# Frontend
+cd ../frontend
+npm run lint
+npm run typecheck
+npm test
+npm run test:coverage
+```
+
+Use `npm run test:watch` in either project for watch mode. Coverage reports are written to that project's `coverage/` directory. GitHub Actions runs dependency installation, linting, application and test type checks, tests, and production builds on pushes and pull requests; it does not deploy the application.
 
 ### Backend
 

@@ -4,7 +4,7 @@ A modern full-stack food ordering platform built with React, Vite, TypeScript, E
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.19%2B%20or%2022.12%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_or_Local-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 
 ## Overview
@@ -120,7 +120,7 @@ food-delivery-app/
 
 Before running the project locally, make sure you have:
 
-- Node.js 18 or newer
+- Node.js 20.19+ or 22.12+
 - npm
 - MongoDB running locally or a MongoDB Atlas instance
 - Git
@@ -193,6 +193,10 @@ The app should be available at:
 cd backend
 npm run dev
 npm run build
+npm run typecheck
+npm run typecheck:test
+npm test
+npm run test:coverage
 npm start
 ```
 
@@ -203,8 +207,13 @@ cd frontend
 npm run dev
 npm run build
 npm run lint
+npm run typecheck
+npm test
+npm run test:coverage
 npm run preview
 ```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md#automated-tests) for test setup and CI details.
 
 ## API Overview
 

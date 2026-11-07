@@ -1,0 +1,12 @@
+process.env.NODE_ENV = 'test';
+process.env.PORT = '5001';
+process.env.MONGO_URI = 'mongodb://127.0.0.1:27017/foodflow-vitest-isolated';
+process.env.JWT_SECRET = 'foodflow-vitest-only-secret-minimum-32-characters';
+process.env.JWT_EXPIRES_IN = '15m';
+process.env.CLIENT_URL = 'http://localhost:5173';
+process.env.API_RATE_LIMIT_WINDOW_MS = '60000';
+process.env.API_RATE_LIMIT_MAX = '1000';
+process.env.AUTH_RATE_LIMIT_WINDOW_MS = '60000';
+process.env.AUTH_RATE_LIMIT_MAX = '1000';
+process.env.STRIPE_SECRET_KEY = 'sk_test_foodflow_vitest_only';
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_foodflow_vitest_only';
