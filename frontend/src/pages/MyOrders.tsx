@@ -402,7 +402,8 @@ export default function MyOrders() {
                       </p>
 
                       {order.paymentStatus !== 'paid' &&
-                        order.paymentMethod !== 'cod' && (
+                        order.paymentMethod !== 'cod' &&
+                        order.status !== 'cancelled' && (
                         <button
                           type="button"
                           onClick={() =>

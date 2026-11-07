@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { getFoodImageUrl } from "../api/food";
 import { MAX_ORDER_ITEM_QUANTITY } from "../types";
+import { getCartItemTotal } from "../utils/cart";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -84,7 +85,9 @@ export default function Cart() {
                       </div>
 
                       <p className="font-semibold">
-                        {currencyFormatter.format(food.price * quantity)}
+                        {currencyFormatter.format(
+                          getCartItemTotal(food.price, quantity)
+                        )}
                       </p>
                     </div>
 

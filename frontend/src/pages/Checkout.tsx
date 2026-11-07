@@ -9,6 +9,7 @@ import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
 
 import type { IOrderAddress, PaymentMethod } from "../types";
+import { getCartItemTotal } from "../utils/cart";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -215,6 +216,7 @@ export default function Checkout() {
 
           <Link
             to="/register"
+            state={{ from: "/checkout" }}
             className="mt-3 block text-sm font-semibold text-indigo-600 hover:text-indigo-800"
           >
             Create an account
@@ -548,7 +550,9 @@ export default function Checkout() {
                     </span>
 
                     <span className="font-semibold">
-                      {currencyFormatter.format(food.price * quantity)}
+                      {currencyFormatter.format(
+                        getCartItemTotal(food.price, quantity)
+                      )}
                     </span>
                   </li>
                 ))}

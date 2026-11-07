@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 
 import type { ICartItem, IFoodItem } from '../types';
 import { CartContext } from './cart-context';
+import { getCartTotal } from '../utils/cart';
 
 const MAX_ITEM_QUANTITY = 99;
 
@@ -104,6 +105,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearCart = useCallback(() => {
+    localStorage.removeItem(CART_STORAGE_KEY);
     setItems([]);
   }, []);
 
@@ -114,11 +116,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const totalPrice = useMemo(
-    () =>
-      items.reduce(
-        (total, item) => total + item.food.price * item.quantity,
-        0
-      ),
+    () => getCartTotal(
+      items.map(({ food, quantity }) => ({
+        price: food.price,
+        quantity,
+      })),
+    ),
     [items]
   );
 
