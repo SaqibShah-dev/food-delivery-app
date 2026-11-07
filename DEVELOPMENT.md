@@ -102,7 +102,7 @@ Configure `backend/.env` with the required backend values, including `JWT_SECRET
 docker compose up --build
 ```
 
-Compose starts MongoDB, the API, and the Nginx-served frontend. Open `http://localhost:5173`; the API is available at `http://localhost:5000`. The Compose configuration connects the backend to its MongoDB service and persists MongoDB data and uploaded files in named volumes. MongoDB is published only on the local loopback interface. For a non-local frontend origin, set `VITE_API_BASE_URL` to the browser-reachable API URL before building.
+Compose starts MongoDB, the API, and the Nginx-served frontend. By default, open `http://localhost:5174`; the API is available at `http://localhost:5001/api`. These host ports avoid conflicting with the local development servers, which commonly use 5173 and 5000. Override them with `FRONTEND_HOST_PORT` and `API_HOST_PORT` if needed. The Compose configuration connects the backend to its MongoDB service and persists MongoDB data and uploaded files in named volumes. MongoDB is reachable only by services on the Compose network and is not published to the host. For a non-local frontend origin, set `VITE_API_BASE_URL` to the browser-reachable API URL before building.
 
 The Dockerfiles can also be built independently. The frontend image accepts `VITE_API_BASE_URL` as a build argument; it must point to an API URL reachable by the user's browser, not merely by another container.
 
