@@ -5,6 +5,7 @@ import {
 } from 'react';
 import type { FormEvent } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 import {
   createFoodItem,
@@ -19,6 +20,7 @@ import type {
   IFoodFormValues,
   IFoodItem,
 } from '../../types';
+import { foodFormSchema } from '../../utils/validation';
 
 const EMPTY_FORM: IFoodFormValues = {
   name: '',
@@ -69,7 +71,6 @@ export default function Food() {
 
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLElement>(null);
@@ -133,7 +134,6 @@ export default function Food() {
     setImage(null);
     setFormError(null);
     setError(null);
-    setSuccess(null);
     setEditorOpen(true);
 
     if (imageInputRef.current) {
@@ -154,7 +154,6 @@ export default function Food() {
     setImage(null);
     setFormError(null);
     setError(null);
-    setSuccess(null);
     setEditorOpen(true);
 
     if (imageInputRef.current) {
@@ -173,47 +172,31 @@ export default function Food() {
 
     setFormError(null);
 
-    const name = form.name.trim();
-    const description = form.description.trim();
-    const category = form.category.trim();
-    const price = Number(form.price);
+    const validation = foodFormSchema.safeParse({
+      ...form,
+      image,
+      isEditing: Boolean(editingItem),
+    });
 
-    if (!name || !description || !category) {
-      setFormError(
-        'Name, description, and category are required.'
-      );
-      return;
-    }
-
-    if (
-      !form.price.trim() ||
-      !Number.isFinite(price) ||
-      price < 0
-    ) {
-      setFormError('Enter a valid non-negative price.');
-      return;
-    }
-
-    if (!editingItem && !image) {
-      setFormError('Choose an image for the new food item.');
+    if (!validation.success) {
+      setFormError(validation.error.issues[0]?.message ?? 'Check the food item details.');
       return;
     }
 
     const formData = new FormData();
 
-    formData.append('name', name);
-    formData.append('description', description);
-    formData.append('price', String(price));
-    formData.append('category', category);
+    formData.append('name', validation.data.name);
+    formData.append('description', validation.data.description);
+    formData.append('price', String(validation.data.price));
+    formData.append('category', validation.data.category);
 
-    if (image) {
-      formData.append('image', image);
+    if (validation.data.image) {
+      formData.append('image', validation.data.image);
     }
 
     mutationInProgress.current = true;
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = editingItem
@@ -230,7 +213,7 @@ export default function Food() {
           : [savedItem, ...currentItems]
       );
 
-      setSuccess(
+      toast.success(
         editingItem
           ? 'Food item updated successfully.'
           : 'Food item created successfully.'
@@ -238,7 +221,7 @@ export default function Food() {
 
       resetEditor();
     } catch (err: unknown) {
-      setFormError(
+      toast.error(
         getErrorMessage(err, 'Failed to save food item')
       );
     } finally {
@@ -267,7 +250,6 @@ export default function Food() {
     mutationInProgress.current = true;
     setBusyItemId(item._id);
     setError(null);
-    setSuccess(null);
 
     try {
       const response = item.isAvailable
@@ -282,13 +264,13 @@ export default function Food() {
         )
       );
 
-      setSuccess(
+      toast.success(
         item.isAvailable
           ? 'Food item hidden from customers.'
           : 'Food item restored to the customer menu.'
       );
     } catch (err: unknown) {
-      setError(
+      toast.error(
         getErrorMessage(
           err,
           'Failed to change food availability'
@@ -355,15 +337,6 @@ export default function Food() {
           </div>
         )}
 
-        {success && (
-          <div
-            role="status"
-            className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-          >
-            {success}
-          </div>
-        )}
-
         {/* Create and edit form */}
         {editorOpen && (
           <section
@@ -374,7 +347,7 @@ export default function Food() {
               {editingItem ? 'Edit food item' : 'Add food item'}
             </h2>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <fieldset disabled={saving} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="block">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { useCart } from "../hooks/useCart";
 
@@ -26,6 +27,7 @@ export default function AddToCartButton({
 
     addItem(food);
     setAdded(true);
+    toast.success(`${food.name} added to cart.`);
 
     window.setTimeout(() => {
       setAdded(false);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { getMyOrders } from '../api/order';
 import { createCheckoutSession } from '../api/payments';
@@ -73,9 +74,6 @@ export default function MyOrders() {
   const [payingOrderId, setPayingOrderId] = useState<
     string | null
   >(null);
-  const [paymentError, setPaymentError] = useState<
-    string | null
-  >(null);
 
   useEffect(() => {
     if (!user) {
@@ -135,7 +133,6 @@ export default function MyOrders() {
 
   const handlePayNow = async (orderId: string) => {
     setPayingOrderId(orderId);
-    setPaymentError(null);
 
     try {
       const response = await createCheckoutSession(
@@ -144,7 +141,7 @@ export default function MyOrders() {
 
       window.location.assign(response.data.checkoutUrl);
     } catch (err: unknown) {
-      setPaymentError(
+      toast.error(
         getErrorMessage(
           err,
           'Unable to start payment. Please try again.'
@@ -218,15 +215,6 @@ export default function MyOrders() {
         <p className="mt-2 text-sm text-slate-600">
           Track your orders and complete pending payments.
         </p>
-
-        {paymentError && (
-          <p
-            role="alert"
-            className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {paymentError}
-          </p>
-        )}
 
         {error && orders.length > 0 && (
           <p

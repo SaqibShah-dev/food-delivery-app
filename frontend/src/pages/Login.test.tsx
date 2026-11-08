@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
   user: null as { role: 'user' | 'admin' } | null,
   loading: false,
 }));
@@ -20,6 +22,13 @@ vi.mock('../hooks/useAuth', () => ({
     loading: mocks.loading,
     login: mocks.login,
   }),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: mocks.toastError,
+    success: mocks.toastSuccess,
+  },
 }));
 
 import Login from './Login';
@@ -122,7 +131,7 @@ describe('Login page', () => {
     resolveLogin({ role: 'user' });
   });
 
-  it('displays API errors', async () => {
+  it('shows API errors in a toast', async () => {
     mocks.login.mockRejectedValue({
       isAxiosError: true,
       response: { data: { message: 'Invalid credentials' } },
@@ -133,9 +142,9 @@ describe('Login page', () => {
     await user.type(screen.getByLabelText('Password'), '123456');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Invalid credentials',
-    );
+    await waitFor(() => {
+      expect(mocks.toastError).toHaveBeenCalledWith('Invalid credentials');
+    });
   });
 
   it('preserves the safe customer destination after login', async () => {
@@ -147,6 +156,7 @@ describe('Login page', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByText('Current route: /checkout')).toBeInTheDocument();
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Signed in successfully.');
   });
 
   it('redirects authenticated admins to their requested admin route', async () => {

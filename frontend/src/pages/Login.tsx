@@ -2,29 +2,13 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { useAuth } from "../hooks/useAuth";
 import { getSafeRedirectPath } from "../utils/redirect";
+import { loginSchema, mapZodFieldErrors } from "../utils/validation";
 
 type FieldErrors = Partial<Record<"email" | "password", string>>;
-
-function validateLogin(email: string, password: string): FieldErrors {
-  const errors: FieldErrors = {};
-
-  if (!email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-    errors.email = "Enter a valid email address.";
-  }
-
-  if (!password) {
-    errors.password = "Password is required.";
-  } else if (password.length < 6) {
-    errors.password = "Password must be at least 6 characters.";
-  }
-
-  return errors;
-}
 
 export default function Login() {
   const { user, loading, login } = useAuth();
@@ -36,7 +20,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const routeState = location.state as { from?: string } | null;
@@ -69,11 +52,17 @@ export default function Login() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const errors = validateLogin(email, password);
-    setFieldErrors(errors);
-    setFormError(null);
+    if (submitting) {
+      return;
+    }
 
-    if (Object.keys(errors).length > 0 || submitting) {
+    const validation = loginSchema.safeParse({ email, password });
+    const errors = validation.success
+      ? {}
+      : mapZodFieldErrors(validation.error.issues, ["email", "password"]);
+    setFieldErrors(errors);
+
+    if (!validation.success) {
       return;
     }
 
@@ -81,19 +70,19 @@ export default function Login() {
 
     try {
       const loggedInUser = await login({
-        email: email.trim(),
-        password,
+        ...validation.data,
       });
 
+      toast.success("Signed in successfully.");
       navigate(getDestination(loggedInUser.role), { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
-        setFormError(
+        toast.error(
           err.response?.data?.message ||
             "Unable to log in. Please check your details and try again.",
         );
       } else {
-        setFormError("Something went wrong. Please try again.");
+        toast.error("Something went wrong. Please try again.");
       }
     } finally {
       setSubmitting(false);
@@ -239,15 +228,6 @@ export default function Login() {
                   </p>
                 )}
               </div>
-
-              {formError && (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                >
-                  {formError}
-                </p>
-              )}
 
               <button
                 type="submit"

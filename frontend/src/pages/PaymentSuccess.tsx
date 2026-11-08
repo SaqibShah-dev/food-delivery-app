@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { confirmCheckoutSession } from '../api/payments';
 import { useAuth } from '../hooks/useAuth';
@@ -36,21 +37,24 @@ export default function PaymentSuccess() {
 
         if (active) {
           setError(null);
+          toast.success('Payment confirmed.');
           setChecking(false);
         }
       } catch (err: unknown) {
         if (active) {
           if (axios.isAxiosError<{ message?: string }>(err)) {
-            setError(
+            const message =
               err.response?.data?.message ||
-                'Unable to verify payment with the server.'
-            );
+              'Unable to verify payment with the server.';
+            setError(message);
+            toast.error(message);
           } else {
-            setError(
+            const message =
               err instanceof Error
                 ? err.message
-                : 'Unable to verify payment with the server.'
-            );
+                : 'Unable to verify payment with the server.';
+            setError(message);
+            toast.error(message);
           }
 
           setChecking(false);

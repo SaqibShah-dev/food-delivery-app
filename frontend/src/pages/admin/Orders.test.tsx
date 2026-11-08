@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   getAllOrders: vi.fn(),
   updateOrderStatus: vi.fn(),
   confirmCashOnDeliveryPayment: vi.fn(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
 }));
 
 vi.mock('../../api/admin', () => ({
@@ -16,6 +18,13 @@ vi.mock('../../api/admin', () => ({
 
 vi.mock('./OrderDetailsModal', () => ({
   default: () => null,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: mocks.toastError,
+    success: mocks.toastSuccess,
+  },
 }));
 
 import Orders from './Orders';
@@ -100,6 +109,7 @@ describe('Admin orders page', () => {
       'confirmed',
     );
     expect(await screen.findAllByDisplayValue('confirmed')).toHaveLength(2);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Order status updated.');
 
     mocks.updateOrderStatus.mockRejectedValue({
       isAxiosError: true,
@@ -107,9 +117,9 @@ describe('Admin orders page', () => {
     });
     const updatedSelect = screen.getAllByLabelText('Update status')[0];
     await user.selectOptions(updatedSelect, 'cancelled');
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Status update rejected',
-    );
+    await waitFor(() => {
+      expect(mocks.toastError).toHaveBeenCalledWith('Status update rejected');
+    });
     expect(screen.getAllByDisplayValue('confirmed')).toHaveLength(2);
   });
 

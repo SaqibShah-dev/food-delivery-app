@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 import OrderDetailsModal from '../admin/OrderDetailsModal';
 
@@ -17,6 +18,7 @@ import type {
   OrderStatus,
   PaymentStatus,
 } from '../../types';
+import { orderDateFilterSchema } from '../../utils/validation';
 
 const statusStyles: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -184,11 +186,13 @@ export default function Orders() {
   }, [loadOrders]);
 
   const handleApplyFilters = () => {
-    if (startDate && endDate && startDate > endDate) {
-      setError(
-        'Start date must be on or before end date.'
-      );
+    const validation = orderDateFilterSchema.safeParse({
+      startDate,
+      endDate,
+    });
 
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message ?? 'Invalid date range.');
       return;
     }
 
@@ -265,8 +269,9 @@ export default function Orders() {
             )
           : updatedOrders;
       });
+      toast.success('Order status updated.');
     } catch (err: unknown) {
-      setError(
+      toast.error(
         getErrorMessage(
           err,
           'Failed to update order status.'
@@ -319,8 +324,9 @@ export default function Orders() {
             : currentOrder
         )
       );
+      toast.success('Cash collection confirmed.');
     } catch (err: unknown) {
-      setError(
+      toast.error(
         getErrorMessage(
           err,
           'Failed to confirm cash collection.'

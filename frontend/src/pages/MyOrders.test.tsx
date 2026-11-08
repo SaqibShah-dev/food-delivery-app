@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getMyOrders: vi.fn(),
   createCheckoutSession: vi.fn(),
   getFoodImageUrl: vi.fn((image: string) => image),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
   user: { name: 'Alex' } as { name: string } | null,
   loading: false,
 }));
@@ -25,6 +27,13 @@ vi.mock('../api/payments', () => ({
 
 vi.mock('../api/food', () => ({
   getFoodImageUrl: mocks.getFoodImageUrl,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: mocks.toastError,
+    success: mocks.toastSuccess,
+  },
 }));
 
 import MyOrders from './MyOrders';
@@ -129,7 +138,7 @@ describe('My orders page', () => {
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
   });
 
-  it('submits the correct order id for payment and displays API errors', async () => {
+  it('submits the correct order id for payment and toasts API errors', async () => {
     mocks.getMyOrders.mockResolvedValue({
       data: [makeOrder('order-pending', 'pending')],
     });
@@ -142,7 +151,7 @@ describe('My orders page', () => {
     await user.click(await screen.findByRole('button', { name: 'Pay now' }));
 
     expect(mocks.createCheckoutSession).toHaveBeenCalledWith('order-pending');
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+    expect(mocks.toastError).toHaveBeenCalledWith(
       'Payment provider unavailable',
     );
   });

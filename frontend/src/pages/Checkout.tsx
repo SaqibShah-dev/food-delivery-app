@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { createOrder } from "../api/order";
 import { createCheckoutSession } from "../api/payments";
@@ -10,6 +11,10 @@ import { useAuth } from "../hooks/useAuth";
 
 import type { IOrderAddress, PaymentMethod } from "../types";
 import { getCartItemTotal } from "../utils/cart";
+import {
+  checkoutAddressSchema,
+  mapZodFieldErrors,
+} from "../utils/validation";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -28,38 +33,6 @@ type AddressField = keyof IOrderAddress;
 
 type FieldErrors = Partial<Record<AddressField, string>>;
 
-function validateAddress(address: IOrderAddress): FieldErrors {
-  const errors: FieldErrors = {};
-
-  if (!address.fullName.trim()) {
-    errors.fullName = "Full name is required.";
-  } else if (address.fullName.trim().length < 2) {
-    errors.fullName = "Enter your full name.";
-  }
-
-  if (!address.phone.trim()) {
-    errors.phone = "Phone number is required.";
-  } else if (!/^[+\d][\d\s()-]{6,19}$/.test(address.phone.trim())) {
-    errors.phone = "Enter a valid phone number.";
-  }
-
-  if (!address.street.trim()) {
-    errors.street = "Street address is required.";
-  } else if (address.street.trim().length < 5) {
-    errors.street = "Enter a complete street address.";
-  }
-
-  if (!address.city.trim()) {
-    errors.city = "City is required.";
-  }
-
-  if (!address.country.trim()) {
-    errors.country = "Country is required.";
-  }
-
-  return errors;
-}
-
 function getErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError<{ message?: string }>(error)) {
     return error.response?.data?.message || error.message || fallback;
@@ -76,7 +49,6 @@ export default function Checkout() {
   const [address, setAddress] = useState<IOrderAddress>(initialAddress);
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>("stripe");
@@ -98,15 +70,23 @@ export default function Checkout() {
     }
 
     if (items.length === 0) {
-      setFormError("Your cart is empty.");
+      toast.error("Your cart is empty.");
       return;
     }
 
-    const errors = validateAddress(address);
+    const validation = checkoutAddressSchema.safeParse(address);
+    const errors = validation.success
+      ? {}
+      : mapZodFieldErrors(validation.error.issues, [
+          "fullName",
+          "phone",
+          "street",
+          "city",
+          "country",
+        ]);
     setFieldErrors(errors);
-    setFormError(null);
 
-    if (Object.keys(errors).length > 0) {
+    if (!validation.success) {
       return;
     }
 
@@ -123,13 +103,7 @@ export default function Checkout() {
             foodId: item.food._id,
             quantity: item.quantity,
           })),
-          address: {
-            fullName: address.fullName.trim(),
-            phone: address.phone.trim(),
-            street: address.street.trim(),
-            city: address.city.trim(),
-            country: address.country.trim(),
-          },
+          address: validation.data,
         });
 
         if (!response.data._id) {
@@ -153,7 +127,7 @@ export default function Checkout() {
           window.location.assign(checkout.data.checkoutUrl);
           return;
         } catch (err: unknown) {
-          setFormError(
+          toast.error(
             `${getErrorMessage(
               err,
               "Unable to start Stripe Checkout."
@@ -164,6 +138,7 @@ export default function Checkout() {
       }
 
       clearCart();
+      toast.success("Order placed successfully.");
       navigate("/order-confirmation", {
         state: {
           orderId,
@@ -173,7 +148,7 @@ export default function Checkout() {
         replace: true,
       });
     } catch (err: unknown) {
-      setFormError(getErrorMessage(err, "Unable to place your order."));
+      toast.error(getErrorMessage(err, "Unable to place your order."));
     } finally {
       setSubmitting(false);
     }
@@ -502,15 +477,6 @@ export default function Checkout() {
                   </label>
                 </div>
               </fieldset>
-
-              {formError && (
-                <p
-                  role="alert"
-                  className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                >
-                  {formError}
-                </p>
-              )}
 
               <button
                 type="submit"

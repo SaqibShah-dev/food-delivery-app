@@ -11,6 +11,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createOrder: vi.fn(),
   createCheckoutSession: vi.fn(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
   clearCart: vi.fn(),
   user: null as { name: string } | null,
   loading: false,
@@ -42,6 +44,13 @@ vi.mock('../api/order', () => ({
 
 vi.mock('../api/payments', () => ({
   createCheckoutSession: mocks.createCheckoutSession,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: mocks.toastError,
+    success: mocks.toastSuccess,
+  },
 }));
 
 import Checkout from './Checkout';
@@ -142,7 +151,9 @@ describe('Checkout page', () => {
     await fillAddress(user);
     await user.click(screen.getByRole('button', { name: /Continue to Stripe/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Food is unavailable');
+    await waitFor(() => {
+      expect(mocks.toastError).toHaveBeenCalledWith('Food is unavailable');
+    });
     expect(mocks.createOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         paymentMethod: 'stripe',
@@ -172,9 +183,11 @@ describe('Checkout page', () => {
     await fillAddress(user);
     await user.click(screen.getByRole('button', { name: /Continue to Stripe/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Stripe is unavailable Your order is saved; retry here or pay from My Orders.',
-    );
+    await waitFor(() => {
+      expect(mocks.toastError).toHaveBeenCalledWith(
+        'Stripe is unavailable Your order is saved; retry here or pay from My Orders.',
+      );
+    });
     expect(mocks.createOrder).toHaveBeenCalledOnce();
     expect(mocks.createCheckoutSession).toHaveBeenCalledWith('order-123');
     expect(mocks.clearCart).not.toHaveBeenCalled();
@@ -197,6 +210,7 @@ describe('Checkout page', () => {
     );
     expect(mocks.createCheckoutSession).not.toHaveBeenCalled();
     expect(mocks.clearCart).toHaveBeenCalledOnce();
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Order placed successfully.');
   });
 
   it('prevents duplicate submissions while order creation is pending', async () => {

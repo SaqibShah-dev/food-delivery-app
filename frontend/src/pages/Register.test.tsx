@@ -11,6 +11,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   register: vi.fn(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
   user: null as { role: 'user' | 'admin' } | null,
   loading: false,
 }));
@@ -25,6 +27,13 @@ vi.mock('../hooks/useAuth', () => ({
 
 vi.mock('../api/auth', () => ({
   registerUser: mocks.register,
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: mocks.toastError,
+    success: mocks.toastSuccess,
+  },
 }));
 
 import Register from './Register';
@@ -95,7 +104,7 @@ describe('Registration page', () => {
     expect(mocks.register).not.toHaveBeenCalled();
   });
 
-  it('shows API errors', async () => {
+  it('shows API errors in a toast', async () => {
     mocks.register.mockRejectedValue({
       isAxiosError: true,
       response: { data: { message: 'Email already exists' } },
@@ -105,9 +114,8 @@ describe('Registration page', () => {
     await fillValidRegistration(user);
     await user.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Email already exists',
-    );
+    await screen.findByRole('button', { name: 'Create account' });
+    expect(mocks.toastError).toHaveBeenCalledWith('Email already exists');
     expect(mocks.login).not.toHaveBeenCalled();
   });
 
@@ -132,6 +140,7 @@ describe('Registration page', () => {
       email: 'alex@example.com',
       password: 'secret123',
     });
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Account created successfully.');
   });
 
   it('waits for session restoration', () => {
