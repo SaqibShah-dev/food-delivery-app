@@ -1,14 +1,5 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDirectory = path.resolve(__dirname, '../../uploads');
-
-if (!fs.existsSync(uploadDirectory)) {
-  fs.mkdirSync(uploadDirectory, { recursive: true });
-}
 
 const allowedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
@@ -19,30 +10,8 @@ const allowedMimeTypes = new Set([
   'application/octet-stream',
 ]);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, callback) => {
-    callback(null, uploadDirectory);
-  },
-
-  filename: (_req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-
-    const filename = `${Date.now()}-${Math.round(
-      Math.random() * 1_000_000_000
-    )}${extension}`;
-
-    callback(null, filename);
-  },
-});
-
 const fileFilter: multer.Options['fileFilter'] = (_req, file, callback) => {
   const extension = path.extname(file.originalname).toLowerCase();
-
-  console.log('Uploaded file:', {
-    originalname: file.originalname,
-    mimetype: file.mimetype,
-    extension,
-  });
 
   const hasValidExtension = allowedExtensions.has(extension);
   const hasValidMimeType = allowedMimeTypes.has(file.mimetype);
@@ -59,7 +28,7 @@ const fileFilter: multer.Options['fileFilter'] = (_req, file, callback) => {
 };
 
 export const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,

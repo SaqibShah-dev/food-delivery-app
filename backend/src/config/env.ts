@@ -25,6 +25,9 @@ const envSchema = z.object({
     .string()
     .trim()
     .regex(/^mongodb(\+srv)?:\/\//, 'Must be a valid MongoDB connection URI'),
+  CLOUDINARY_CLOUD_NAME: z.string().trim().min(1),
+  CLOUDINARY_API_KEY: z.string().trim().min(1),
+  CLOUDINARY_API_SECRET: z.string().trim().min(1),
   JWT_SECRET: z.string().min(32, 'Must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().trim().min(1).default('7d'),
 

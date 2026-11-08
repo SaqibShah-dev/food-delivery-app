@@ -8,6 +8,10 @@ import type {
 } from '../types';
 
 export function getFoodImageUrl(image: string): string {
+  if (/^https?:\/\//i.test(image)) {
+    return image;
+  }
+
   const apiUrl = new URL(API_BASE, window.location.origin);
 
   return new URL(image, apiUrl.origin).toString();

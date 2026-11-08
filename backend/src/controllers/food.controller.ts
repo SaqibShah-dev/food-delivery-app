@@ -4,6 +4,10 @@ import { foodService } from "../services/food.service.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import { IFoodItem } from "../types/index.js";
+import {
+  deleteUploadedImage,
+  uploadImage,
+} from "../config/cloudinary.js";
 
 export const getAll = asyncHandler(async (req: AuthRequest, res: Response) => {
   const pageValue = Number(req.query.page);
@@ -57,14 +61,22 @@ export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
     category: string;
   };
 
-  const item = await foodService.create({
-    name,
-    description,
-    price,
-    category,
-    image: `/uploads/${req.file!.filename}`,
-    isAvailable: true,
-  });
+  const uploadedImage = await uploadImage(req.file!.buffer);
+
+  let item;
+  try {
+    item = await foodService.create({
+      name,
+      description,
+      price,
+      category,
+      image: uploadedImage.secure_url,
+      isAvailable: true,
+    });
+  } catch (error) {
+    await deleteUploadedImage(uploadedImage.public_id);
+    throw error;
+  }
 
   res.status(201).json(apiResponse(item, "Food item created", 201));
 });
@@ -80,11 +92,24 @@ export const update = asyncHandler(async (req: AuthRequest, res: Response) => {
 
   const updateData = req.body as Partial<IFoodItem>;
 
-  if (req.file) {
-    updateData.image = `/uploads/${req.file.filename}`;
+  const uploadedImage = req.file
+    ? await uploadImage(req.file.buffer)
+    : undefined;
+
+  if (uploadedImage) {
+    updateData.image = uploadedImage.secure_url;
   }
 
-  const item = await foodService.updateById(id, updateData);
+  let item;
+  try {
+    item = await foodService.updateById(id, updateData);
+  } catch (error) {
+    if (uploadedImage) {
+      await deleteUploadedImage(uploadedImage.public_id);
+    }
+
+    throw error;
+  }
 
   res.json(apiResponse(item, "Food item updated"));
 });

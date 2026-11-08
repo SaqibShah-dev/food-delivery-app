@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import fs from 'fs/promises';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,22 +66,16 @@ function requiredEnvironmentValue(name: string): string {
   return value;
 }
 
-async function writeDemoImage(
-  filename: string,
+function createDemoImage(
   label: string,
   color: string
 ) {
-  const imagePath = path.join(backendDirectory, 'uploads', filename);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420"><rect width="640" height="420" fill="#fff7ed"/><circle cx="320" cy="190" r="132" fill="${color}"/><circle cx="320" cy="190" r="96" fill="#fff7ed"/><circle cx="280" cy="160" r="14" fill="${color}"/><circle cx="350" cy="155" r="14" fill="${color}"/><circle cx="320" cy="220" r="14" fill="${color}"/><text x="320" y="375" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#1e293b">${label}</text></svg>`;
-
-  await fs.writeFile(imagePath, svg, { flag: 'wx' }).catch((error: NodeJS.ErrnoException) => {
-    if (error.code !== 'EEXIST') {
-      throw error;
-    }
-  });
+  return Buffer.from(svg);
 }
 
 async function seed() {
+  const { uploadImage } = await import('../config/cloudinary.js');
   const mongoUri = requiredEnvironmentValue('MONGO_URI');
   const adminEmail = requiredEnvironmentValue('ADMIN_EMAIL').toLowerCase();
   const adminPassword = requiredEnvironmentValue('ADMIN_PASSWORD');
@@ -106,9 +99,6 @@ async function seed() {
     );
   }
 
-  await fs.mkdir(path.join(backendDirectory, 'uploads'), {
-    recursive: true,
-  });
   await mongoose.connect(mongoUri);
 
   const existingAdmin = await User.findOne({ email: adminEmail });
@@ -132,10 +122,13 @@ async function seed() {
   }
 
   for (const food of demoFoods) {
-    await writeDemoImage(
-      food.image,
-      food.name,
-      food.color
+    const uploadedImage = await uploadImage(
+      createDemoImage(food.name, food.color),
+      {
+        public_id: path.parse(food.image).name,
+        overwrite: true,
+        format: 'svg',
+      },
     );
 
     await FoodItem.updateOne(
@@ -144,7 +137,7 @@ async function seed() {
         $set: {
           description: food.description,
           price: food.price,
-          image: `/uploads/${food.image}`,
+          image: uploadedImage.secure_url,
           isAvailable: true,
         },
         $setOnInsert: {

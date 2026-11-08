@@ -1,6 +1,9 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5001';
 process.env.MONGO_URI = 'mongodb://127.0.0.1:27017/foodflow-vitest-isolated';
+process.env.CLOUDINARY_CLOUD_NAME = 'foodflow-test';
+process.env.CLOUDINARY_API_KEY = 'foodflow-test-key';
+process.env.CLOUDINARY_API_SECRET = 'foodflow-test-secret';
 process.env.JWT_SECRET = 'foodflow-vitest-only-secret-minimum-32-characters';
 process.env.JWT_EXPIRES_IN = '15m';
 process.env.CLIENT_URL = 'http://localhost:5173';

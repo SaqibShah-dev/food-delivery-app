@@ -49,6 +49,7 @@ This project is designed to demonstrate a complete customer journey for a food d
 - bcryptjs for password hashing
 - Zod validation
 - Multer for file uploads
+- Cloudinary for food image storage and delivery
 - Stripe for payment session creation
 
 ## Architecture
@@ -147,10 +148,13 @@ JWT_SECRET=replace_with_a_long_random_value
 JWT_EXPIRES_IN=7d
 STRIPE_SECRET_KEY=sk_test_replace_with_your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 CLIENT_URL=http://localhost:5173
 ```
 
-Replace the Stripe placeholders with your test-mode secret key and webhook signing secret. See [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe CLI setup and payment troubleshooting.
+Replace the Stripe placeholders with your test-mode credentials. Set the Cloudinary cloud name, API key, and API secret from your Cloudinary dashboard; image uploads are stored there and served from their secure URLs. See [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe CLI setup, Cloudinary configuration, and troubleshooting.
 
 To create local demo food items and an admin account, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env`, then run `npm run seed` from the `backend/` directory. See [DEVELOPMENT.md](DEVELOPMENT.md#seed-demo-data-and-an-admin-account) for details.
 

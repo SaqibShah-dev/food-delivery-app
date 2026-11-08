@@ -40,10 +40,15 @@ JWT_SECRET=replace_with_a_long_random_value
 JWT_EXPIRES_IN=7d
 STRIPE_SECRET_KEY=sk_test_replace_with_your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 CLIENT_URL=http://localhost:5173
 ```
 
-The app validates these values in `backend/src/config/env.ts` and exits on startup if required values are missing or malformed. `JWT_SECRET` must be at least 32 characters; MongoDB, browser URL, port, rate limits, Stripe secret key, and webhook signing secret formats are checked.
+The app validates these values in `backend/src/config/env.ts` and exits on startup if required values are missing or malformed. `JWT_SECRET` must be at least 32 characters; MongoDB, browser URL, port, rate limits, Stripe credentials, and Cloudinary credentials are checked.
+
+Food images uploaded by admins are sent to Cloudinary and their secure delivery URLs are stored in MongoDB. Existing `/uploads/...` image paths remain supported for previously stored local images. Create a Cloudinary account and copy its cloud name, API key, and API secret into `backend/.env`; never commit the secret.
 
 #### Seed demo data and an admin account
 
@@ -54,7 +59,7 @@ cd backend
 npm run seed
 ```
 
-The script creates the admin account if it does not already exist, seeds five demo food items, and writes their local SVG images under `backend/uploads`. It is safe to rerun: matching demo items are updated and an existing admin password is left unchanged. If the email already belongs to a non-admin account, seeding stops without changing that account. The script refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=true` is explicitly set.
+The script creates the admin account if it does not already exist, uploads five demo SVG images to Cloudinary, and seeds their secure delivery URLs. It is safe to rerun: matching demo items and Cloudinary demo images are updated, and an existing admin password is left unchanged. If the email already belongs to a non-admin account, seeding stops without changing that account. The script refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=true` is explicitly set.
 
 #### Configure Stripe for local payments
 
@@ -102,7 +107,7 @@ Configure `backend/.env` with the required backend values, including `JWT_SECRET
 docker compose up --build
 ```
 
-Compose starts MongoDB, the API, and the Nginx-served frontend. By default, open `http://localhost:5174`; the API is available at `http://localhost:5001/api`. These host ports avoid conflicting with the local development servers, which commonly use 5173 and 5000. Override them with `FRONTEND_HOST_PORT` and `API_HOST_PORT` if needed. The Compose configuration connects the backend to its MongoDB service and persists MongoDB data and uploaded files in named volumes. MongoDB is reachable only by services on the Compose network and is not published to the host. For a non-local frontend origin, set `VITE_API_BASE_URL` to the browser-reachable API URL before building.
+Compose starts MongoDB, the API, and the Nginx-served frontend. By default, open `http://localhost:5174`; the API is available at `http://localhost:5001/api`. These host ports avoid conflicting with the local development servers, which commonly use 5173 and 5000. Override them with `FRONTEND_HOST_PORT` and `API_HOST_PORT` if needed. The Compose configuration connects the backend to its MongoDB service and persists MongoDB data; Cloudinary stores newly uploaded images, while the named uploads volume remains available for legacy local images. MongoDB is reachable only by services on the Compose network and is not published to the host. For a non-local frontend origin, set `VITE_API_BASE_URL` to the browser-reachable API URL before building.
 
 The Dockerfiles can also be built independently. The frontend image accepts `VITE_API_BASE_URL` as a build argument; it must point to an API URL reachable by the user's browser, not merely by another container.
 
@@ -278,7 +283,7 @@ The app follows a straightforward layered flow:
 - keep secrets in `backend/.env` and never commit them
 - update [API.md](API.md) when route contracts or payloads change
 - keep response payloads consistent with the shared helper in `backend/src/utils/apiResponse.ts`
-- uploaded images are stored in `backend/uploads/` and exposed through `/uploads`
+- newly uploaded food images are stored in Cloudinary; the `/uploads` static route remains only for legacy local images
 - keep business logic in service files rather than controllers whenever possible
 
 ## Validation Before Opening a PR
