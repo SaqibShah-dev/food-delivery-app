@@ -20,7 +20,10 @@ import type {
   IFoodFormValues,
   IFoodItem,
 } from '../../types';
-import { foodFormSchema } from '../../utils/validation';
+import {
+  foodFormSchema,
+  mapZodFieldErrors,
+} from '../../utils/validation';
 
 const EMPTY_FORM: IFoodFormValues = {
   name: '',
@@ -28,6 +31,8 @@ const EMPTY_FORM: IFoodFormValues = {
   price: '',
   category: '',
 };
+
+type FoodFormField = keyof IFoodFormValues | 'image';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -70,7 +75,9 @@ export default function Food() {
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<FoodFormField, string>>
+  >({});
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLElement>(null);
@@ -121,7 +128,7 @@ export default function Food() {
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });
     setImage(null);
-    setFormError(null);
+    setFieldErrors({});
 
     if (imageInputRef.current) {
       imageInputRef.current.value = '';
@@ -132,7 +139,7 @@ export default function Food() {
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });
     setImage(null);
-    setFormError(null);
+    setFieldErrors({});
     setError(null);
     setEditorOpen(true);
 
@@ -152,7 +159,7 @@ export default function Food() {
     });
 
     setImage(null);
-    setFormError(null);
+    setFieldErrors({});
     setError(null);
     setEditorOpen(true);
 
@@ -170,8 +177,6 @@ export default function Food() {
       return;
     }
 
-    setFormError(null);
-
     const validation = foodFormSchema.safeParse({
       ...form,
       image,
@@ -179,9 +184,19 @@ export default function Food() {
     });
 
     if (!validation.success) {
-      setFormError(validation.error.issues[0]?.message ?? 'Check the food item details.');
+      setFieldErrors(
+        mapZodFieldErrors(validation.error.issues, [
+          'name',
+          'description',
+          'price',
+          'category',
+          'image',
+        ]),
+      );
       return;
     }
+
+    setFieldErrors({});
 
     const formData = new FormData();
 
@@ -300,6 +315,14 @@ export default function Food() {
 
   const mutationBusy = saving || busyItemId !== null;
 
+  const updateFormField = <K extends keyof IFoodFormValues>(
+    field: K,
+    value: IFoodFormValues[K],
+  ) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+  };
+
   return (
     <main className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -350,109 +373,184 @@ export default function Food() {
             <form onSubmit={handleSubmit} noValidate>
               <fieldset disabled={saving} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-gray-700">
+                  <div>
+                    <label
+                      htmlFor="food-name"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Name
-                    </span>
-
+                    </label>
                     <input
+                      id="food-name"
                       required
                       value={form.name}
                       onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          name: event.target.value,
-                        }))
+                        updateFormField('name', event.target.value)
+                      }
+                      aria-invalid={Boolean(fieldErrors.name)}
+                      aria-describedby={
+                        fieldErrors.name ? 'food-name-error' : undefined
                       }
                       className={inputClass}
                     />
-                  </label>
+                    {fieldErrors.name && (
+                      <span
+                        id="food-name-error"
+                        role="alert"
+                        className="mt-1 block text-xs text-red-600"
+                      >
+                        {fieldErrors.name}
+                      </span>
+                    )}
+                  </div>
 
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-gray-700">
+                  <div>
+                    <label
+                      htmlFor="food-category"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Category
-                    </span>
-
+                    </label>
                     <input
+                      id="food-category"
                       required
                       value={form.category}
                       placeholder="Pizza, Beverages, Desserts..."
                       onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          category: event.target.value,
-                        }))
+                        updateFormField('category', event.target.value)
+                      }
+                      aria-invalid={Boolean(fieldErrors.category)}
+                      aria-describedby={
+                        fieldErrors.category
+                          ? 'food-category-error'
+                          : undefined
                       }
                       className={inputClass}
                     />
-                  </label>
+                    {fieldErrors.category && (
+                      <span
+                        id="food-category-error"
+                        role="alert"
+                        className="mt-1 block text-xs text-red-600"
+                      >
+                        {fieldErrors.category}
+                      </span>
+                    )}
+                  </div>
 
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-gray-700">
+                  <div>
+                    <label
+                      htmlFor="food-price"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Price (USD)
-                    </span>
-
+                    </label>
                     <input
+                      id="food-price"
                       required
                       type="number"
                       min="0"
                       step="0.01"
                       value={form.price}
                       onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          price: event.target.value,
-                        }))
+                        updateFormField('price', event.target.value)
+                      }
+                      aria-invalid={Boolean(fieldErrors.price)}
+                      aria-describedby={
+                        fieldErrors.price ? 'food-price-error' : undefined
                       }
                       className={inputClass}
                     />
-                  </label>
+                    {fieldErrors.price && (
+                      <span
+                        id="food-price-error"
+                        role="alert"
+                        className="mt-1 block text-xs text-red-600"
+                      >
+                        {fieldErrors.price}
+                      </span>
+                    )}
+                  </div>
 
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-gray-700">
+                  <div>
+                    <label
+                      htmlFor="food-image"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Image
                       {editingItem ? ' (optional replacement)' : ''}
-                    </span>
-
+                    </label>
                     <input
+                      id="food-image"
                       ref={imageInputRef}
                       required={!editingItem}
                       type="file"
                       accept="image/*"
-                      onChange={(event) =>
-                        setImage(
-                          event.target.files?.[0] || null
-                        )
+                      onChange={(event) => {
+                        setImage(event.target.files?.[0] || null);
+                        setFieldErrors((current) => ({
+                          ...current,
+                          image: undefined,
+                        }));
+                      }}
+                      aria-invalid={Boolean(fieldErrors.image)}
+                      aria-describedby={
+                        fieldErrors.image ? 'food-image-error' : undefined
                       }
                       className={`${inputClass} file:mr-3 file:rounded file:border-0 file:bg-indigo-50 file:px-3 file:py-1 file:text-indigo-700`}
                     />
+
+                    {fieldErrors.image && (
+                      <span
+                        id="food-image-error"
+                        role="alert"
+                        className="mt-1 block text-xs text-red-600"
+                      >
+                        {fieldErrors.image}
+                      </span>
+                    )}
 
                     {editingItem && (
                       <p className="mt-1 text-xs text-gray-500">
                         Leave empty to keep the current image.
                       </p>
                     )}
-                  </label>
+                  </div>
                 </div>
 
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">
+                <div>
+                  <label
+                    htmlFor="food-description"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
                     Description
-                  </span>
-
+                  </label>
                   <textarea
+                    id="food-description"
                     required
                     rows={3}
                     value={form.description}
                     onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
+                      updateFormField('description', event.target.value)
+                    }
+                    aria-invalid={Boolean(fieldErrors.description)}
+                    aria-describedby={
+                      fieldErrors.description
+                        ? 'food-description-error'
+                        : undefined
                     }
                     className={inputClass}
                   />
-                </label>
+                  {fieldErrors.description && (
+                    <span
+                      id="food-description-error"
+                      role="alert"
+                      className="mt-1 block text-xs text-red-600"
+                    >
+                      {fieldErrors.description}
+                    </span>
+                  )}
+                </div>
 
                 {editingItem && (
                   <img
@@ -460,15 +558,6 @@ export default function Food() {
                     alt={`Current image of ${editingItem.name}`}
                     className="h-24 w-24 rounded-lg object-cover"
                   />
-                )}
-
-                {formError && (
-                  <p
-                    role="alert"
-                    className="text-sm text-red-600"
-                  >
-                    {formError}
-                  </p>
                 )}
 
                 <div className="flex gap-3">
