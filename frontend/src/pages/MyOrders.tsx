@@ -7,44 +7,11 @@ import { getMyOrders } from '../api/order';
 import { createCheckoutSession } from '../api/payments';
 import { getFoodImageUrl } from '../api/food';
 import { useAuth } from '../hooks/useAuth';
+import { formatCurrency, formatDate } from '../utils/format';
+import OrderStatusBadge from '../components/OrderStatusBadge';
+import PaymentStatusBadge from '../components/PaymentStatusBadge';
 
 import type { IPopulatedOrder } from '../types';
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-
-const statusStyles: Record<string, string> = {
-  pending: 'bg-amber-50 text-amber-700 ring-amber-200',
-  confirmed: 'bg-blue-50 text-blue-700 ring-blue-200',
-  preparing:
-    'bg-purple-50 text-purple-700 ring-purple-200',
-  'out-for-delivery':
-    'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  delivered:
-    'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  cancelled: 'bg-red-50 text-red-700 ring-red-200',
-};
-
-const paymentStyles: Record<string, string> = {
-  pending: 'bg-amber-50 text-amber-700 ring-amber-200',
-  paid: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  failed: 'bg-red-50 text-red-700 ring-red-200',
-  refunded: 'bg-slate-100 text-slate-700 ring-slate-200',
-};
-
-function formatStatus(status: string) {
-  return status
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 function getErrorMessage(
   error: unknown,
@@ -287,34 +254,13 @@ export default function MyOrders() {
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      {dateFormatter.format(
-                        new Date(order.createdAt)
-                      )}
+                      {formatDate(order.createdAt)}
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                        statusStyles[order.status] ||
-                        'bg-slate-100 text-slate-700 ring-slate-200'
-                      }`}
-                    >
-                      {formatStatus(order.status)}
-                    </span>
-
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                        paymentStyles[
-                          order.paymentStatus
-                        ] ||
-                        'bg-slate-100 text-slate-700 ring-slate-200'
-                      }`}
-                    >
-                      {formatStatus(
-                        order.paymentStatus
-                      )}
-                    </span>
+                    <OrderStatusBadge status={order.status} />
+                    <PaymentStatusBadge status={order.paymentStatus} />
                   </div>
                 </div>
 
@@ -343,7 +289,7 @@ export default function MyOrders() {
                             <p className="mt-0.5 text-xs text-slate-500">
                               Quantity:{' '}
                               {item.quantity} •{' '}
-                              {currencyFormatter.format(
+                              {formatCurrency(
                                 item.unitPrice
                               )}{' '}
                               each
@@ -351,7 +297,7 @@ export default function MyOrders() {
                           </div>
 
                           <p className="text-sm font-semibold">
-                            {currencyFormatter.format(
+                            {formatCurrency(
                               item.subtotal
                             )}
                           </p>
@@ -384,7 +330,7 @@ export default function MyOrders() {
                       </h3>
 
                       <p className="mt-2 text-2xl font-bold text-indigo-600">
-                        {currencyFormatter.format(
+                        {formatCurrency(
                           order.totalAmount
                         )}
                       </p>

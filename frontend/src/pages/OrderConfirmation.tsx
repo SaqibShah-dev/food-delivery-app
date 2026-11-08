@@ -1,9 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatCurrency } from "../utils/format";
 
 export default function OrderConfirmation() {
   const location = useLocation();
@@ -40,7 +36,7 @@ export default function OrderConfirmation() {
           <p className="mt-3 text-sm text-slate-600">
             Total:{" "}
             <span className="font-semibold">
-              {currencyFormatter.format(routeState.totalAmount)}
+              {formatCurrency(routeState.totalAmount)}
             </span>
           </p>
         )}

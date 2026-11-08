@@ -1,6 +1,6 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
-import Menu from "./pages/Menu";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
@@ -8,18 +8,33 @@ import AdminRoute from "./components/AdminRoute";
 import RequireAuth from "./components/RequireAuth";
 import AdminLayout from "./layouts/AdminLayout";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+// Customer storefront pages (code-split)
+const Menu = lazy(() => import("./pages/Menu"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 
-import Dashboard from "./pages/admin/Dashboard";
-import Orders from "./pages/admin/Orders";
-import MyOrders from "./pages/MyOrders";
-import Food from "./pages/admin/Food";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentCancel from "./pages/PaymentCancel";
+// Admin back-office pages (code-split, isolates heavy charting dependencies)
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Orders = lazy(() => import("./pages/admin/Orders"));
+const Food = lazy(() => import("./pages/admin/Food"));
+
+export function RouteLoadingFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading page"
+      className="flex min-h-[60vh] items-center justify-center p-6"
+    >
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+    </div>
+  );
+}
 
 function AccessDenied() {
   const { logout } = useAuth();
@@ -69,39 +84,41 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-right" richColors closeButton />
-        <Routes>
-          <Route path="/" element={<Menu />} />
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Menu />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route element={<RequireAuth />}>
-            <Route path="/orders" element={<MyOrders />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
-            <Route path="/payment/cancel" element={<PaymentCancel />} />
-            <Route
-              path="/order-confirmation"
-              element={<OrderConfirmation />}
-            />
-          </Route>
-
-          <Route path="/access-denied" element={<AccessDeniedRoute />} />
-
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-
-              <Route path="dashboard" element={<Dashboard />} />
-
-              <Route path="orders" element={<Orders />} />
-
-              <Route path="food" element={<Food />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/orders" element={<MyOrders />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
+              <Route
+                path="/order-confirmation"
+                element={<OrderConfirmation />}
+              />
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route path="/access-denied" element={<AccessDeniedRoute />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+
+                <Route path="dashboard" element={<Dashboard />} />
+
+                <Route path="orders" element={<Orders />} />
+
+                <Route path="food" element={<Food />} />
+              </Route>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

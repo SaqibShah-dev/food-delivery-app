@@ -16,34 +16,11 @@ import type {
   IOrder,
   IOrderFilters,
   OrderStatus,
-  PaymentStatus,
 } from '../../types';
 import { orderDateFilterSchema } from '../../utils/validation';
-
-const statusStyles: Record<OrderStatus, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  preparing: 'bg-purple-100 text-purple-800',
-  'out-for-delivery': 'bg-orange-100 text-orange-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-};
-
-const paymentStyles: Record<PaymentStatus, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  paid: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  refunded: 'bg-gray-200 text-gray-800',
-};
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-function formatStatus(status: string) {
-  return status.replaceAll('-', ' ');
-}
+import { formatCurrency, formatStatus } from '../../utils/format';
+import OrderStatusBadge from '../../components/OrderStatusBadge';
+import PaymentStatusBadge from '../../components/PaymentStatusBadge';
 
 function getErrorMessage(
   error: unknown,
@@ -517,7 +494,7 @@ export default function Orders() {
                         </div>
 
                         <p className="text-lg font-bold text-gray-900">
-                          {currencyFormatter.format(
+                          {formatCurrency(
                             order.totalAmount
                           )}
                         </p>
@@ -539,23 +516,8 @@ export default function Orders() {
                       </ul>
 
                       <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                            statusStyles[order.status]
-                          }`}
-                        >
-                          {formatStatus(order.status)}
-                        </span>
-
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                            paymentStyles[
-                              order.paymentStatus
-                            ]
-                          }`}
-                        >
-                          {order.paymentStatus}
-                        </span>
+                        <OrderStatusBadge status={order.status} />
+                        <PaymentStatusBadge status={order.paymentStatus} />
 
                         <span className="text-xs text-gray-500">
                           {order.paymentMethod === 'cod'
@@ -729,22 +691,16 @@ export default function Orders() {
                           </td>
 
                           <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-gray-900">
-                            {currencyFormatter.format(
+                            {formatCurrency(
                               order.totalAmount
                             )}
                           </td>
 
                           <td className="px-5 py-4">
                             <div className="space-y-2">
-                              <span
-                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                  paymentStyles[
-                                    order.paymentStatus
-                                  ]
-                                }`}
-                              >
-                                {order.paymentStatus}
-                              </span>
+                              <div>
+                                <PaymentStatusBadge status={order.paymentStatus} />
+                              </div>
                               <p className="text-xs text-gray-500">
                                 {order.paymentMethod === 'cod'
                                   ? 'Cash on delivery'
@@ -773,17 +729,9 @@ export default function Orders() {
 
                           <td className="px-5 py-4">
                             <div className="space-y-2">
-                              <span
-                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                                  statusStyles[
-                                    order.status
-                                  ]
-                                }`}
-                              >
-                                {formatStatus(
-                                  order.status
-                                )}
-                              </span>
+                              <div>
+                                <OrderStatusBadge status={order.status} />
+                              </div>
 
                               <select
                                 aria-label={`Update status for order ${order._id}`}

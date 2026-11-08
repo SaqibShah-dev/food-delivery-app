@@ -108,7 +108,7 @@ describe('Admin orders page', () => {
       'order-12345678',
       'confirmed',
     );
-    expect(await screen.findAllByDisplayValue('confirmed')).toHaveLength(2);
+    expect(await screen.findAllByDisplayValue('Confirmed')).toHaveLength(2);
     expect(mocks.toastSuccess).toHaveBeenCalledWith('Order status updated.');
 
     mocks.updateOrderStatus.mockRejectedValue({
@@ -120,7 +120,7 @@ describe('Admin orders page', () => {
     await waitFor(() => {
       expect(mocks.toastError).toHaveBeenCalledWith('Status update rejected');
     });
-    expect(screen.getAllByDisplayValue('confirmed')).toHaveLength(2);
+    expect(screen.getAllByDisplayValue('Confirmed')).toHaveLength(2);
   });
 
   it('confirms cash collection only after explicit admin confirmation', async () => {
@@ -144,7 +144,7 @@ describe('Admin orders page', () => {
       'order-12345678',
     );
     await waitFor(() => {
-      expect(screen.getAllByText('paid')).toHaveLength(2);
+      expect(screen.getAllByText('Paid')).toHaveLength(2);
     });
   });
 

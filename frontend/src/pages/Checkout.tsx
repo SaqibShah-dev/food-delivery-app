@@ -11,15 +11,11 @@ import { useAuth } from "../hooks/useAuth";
 
 import type { IOrderAddress, PaymentMethod } from "../types";
 import { getCartItemTotal } from "../utils/cart";
+import { formatCurrency } from "../utils/format";
 import {
   checkoutAddressSchema,
   mapZodFieldErrors,
 } from "../utils/validation";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 const initialAddress: IOrderAddress = {
   fullName: "",
@@ -490,8 +486,8 @@ export default function Checkout() {
                   : stripeOrderId
                     ? "Retry Stripe Checkout"
                     : paymentMethod === "stripe"
-                      ? `Continue to Stripe • ${currencyFormatter.format(totalPrice)}`
-                      : `Place COD order • ${currencyFormatter.format(totalPrice)}`}
+                      ? `Continue to Stripe • ${formatCurrency(totalPrice)}`
+                      : `Place COD order • ${formatCurrency(totalPrice)}`}
               </button>
             </form>
 
@@ -516,7 +512,7 @@ export default function Checkout() {
                     </span>
 
                     <span className="font-semibold">
-                      {currencyFormatter.format(
+                      {formatCurrency(
                         getCartItemTotal(food.price, quantity)
                       )}
                     </span>
@@ -535,7 +531,7 @@ export default function Checkout() {
                   <dt className="font-semibold">Order total</dt>
 
                   <dd className="text-lg font-bold text-indigo-600">
-                    {currencyFormatter.format(totalPrice)}
+                    {formatCurrency(totalPrice)}
                   </dd>
                 </div>
               </dl>

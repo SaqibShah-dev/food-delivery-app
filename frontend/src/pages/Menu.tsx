@@ -11,14 +11,10 @@ import {
 } from "../api/food";
 import { useAuth } from "../hooks/useAuth";
 import type { IFoodItem, IFoodMenuFilters, IPagination } from "../types";
+import { formatCurrency } from "../utils/format";
 
 const PAGE_SIZE = 9;
 const SEARCH_DEBOUNCE_MS = 400;
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 // Inline fallback so a broken image never shows the browser's broken icon.
 const IMAGE_FALLBACK =
@@ -198,7 +194,7 @@ function FoodCard({ item }: { item: IFoodItem }) {
 
         <div className="mt-5 flex items-center justify-between gap-4">
           <p className="text-xl font-bold text-indigo-600">
-            {currencyFormatter.format(item.price)}
+            {formatCurrency(item.price)}
           </p>
           <AddToCartButton food={item} className="w-auto min-w-36" />
         </div>

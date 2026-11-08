@@ -4,11 +4,7 @@ import { useCart } from "../hooks/useCart";
 import { getFoodImageUrl } from "../api/food";
 import { MAX_ORDER_ITEM_QUANTITY } from "../types";
 import { getCartItemTotal } from "../utils/cart";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatCurrency } from "../utils/format";
 
 export default function Cart() {
   const {
@@ -80,12 +76,12 @@ export default function Cart() {
                         <h2 className="font-bold">{food.name}</h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {currencyFormatter.format(food.price)} each
+                          {formatCurrency(food.price)} each
                         </p>
                       </div>
 
                       <p className="font-semibold">
-                        {currencyFormatter.format(
+                        {formatCurrency(
                           getCartItemTotal(food.price, quantity)
                         )}
                       </p>
@@ -158,7 +154,7 @@ export default function Cart() {
                   <dt className="font-semibold">Total</dt>
 
                   <dd className="text-lg font-bold text-indigo-600">
-                    {currencyFormatter.format(totalPrice)}
+                    {formatCurrency(totalPrice)}
                   </dd>
                 </div>
               </dl>
