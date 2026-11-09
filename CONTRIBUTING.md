@@ -39,7 +39,7 @@ cd ../frontend && npm install
 
 ### 4. Configure your local environment
 
-Create a `backend/.env` file using the values from [Readme.md](Readme.md). Do not commit this file.
+Create a `backend/.env` file from `backend/.env.example` and fill in your values. See [README.md](README.md) for the variable reference and [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe and Cloudinary setup. Do not commit this file.
 
 ## Coding Standards
 
@@ -64,9 +64,10 @@ Create a `backend/.env` file using the values from [Readme.md](Readme.md). Do no
 
 ### Frontend conventions
 
-- keep API logic in `frontend/src/services/`
+- keep API logic in `frontend/src/api/` (typed clients per domain)
 - organize UI by component or page feature area
-- keep styles close to the component or page that uses them
+- share cross-page state through the contexts in `frontend/src/context/`
+- keep reusable helpers in `frontend/src/utils/`
 
 ## Validation Before Opening a PR
 
@@ -98,7 +99,7 @@ Before submitting a pull request:
 
 When you change an API contract or local workflow, update the relevant docs:
 
-- [Readme.md](Readme.md)
+- [README.md](README.md)
 - [API.md](API.md)
 - [DEVELOPMENT.md](DEVELOPMENT.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -180,6 +181,7 @@ How to test these changes
 - Update README.md for user-facing changes
 - Add code comments for complex logic
 - Update API.md for endpoint changes
+- Update ARCHITECTURE.md when structure or data models change
 - Add JSDoc comments for functions
 
 ### JSDoc Example

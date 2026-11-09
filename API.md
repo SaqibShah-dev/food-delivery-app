@@ -51,7 +51,8 @@ Important implementation details:
 - The app uses `Zod` validation for request payloads.
 - Admin-only endpoints require `req.user.role === 'admin'`.
 - Food item uploads use `multipart/form-data` with an `image` file field.
-- Uploaded files are served from `/uploads`.
+- Accepted image formats: JPEG, PNG, and WebP; maximum size 5 MB.
+- Newly uploaded images are stored in Cloudinary and returned as secure delivery URLs; `/uploads/...` paths appear only on legacy items with locally stored images.
 
 ## Authentication
 
@@ -684,8 +685,10 @@ Example response:
 - `401 Unauthorized`: missing/invalid JWT
 - `403 Forbidden`: admin access required or unauthorized order access
 - `404 Not Found`: resource not found or route missing
-- `409 Conflict`: duplicate unique value, e.g. duplicate email
+- `409 Conflict`: duplicate unique value, illegal order status transition, or a payment/checkout state conflict
 - `413 Payload Too Large`: uploaded image exceeds maximum size
+- `429 Too Many Requests`: rate limit exceeded on the API or auth endpoints
+- `502 Bad Gateway`: upstream payment provider error (e.g. Stripe rejected the configured key)
 
 ## Notes on the current implementation
 
@@ -693,6 +696,6 @@ Example response:
 - Public uploads are exposed via `/uploads`.
 - The app uses `helmet`, `cors`, request throttling, and input validation.
 - The frontend is a React + Vite app that consumes this API from the `frontend/` directory.
-- The current backend scope covers authentication, food browsing and admin management, order creation and tracking, and Stripe checkout session creation.
+- The current backend scope covers authentication, food browsing and admin management, order creation and tracking, Stripe checkout sessions with webhook-based confirmation, cash on delivery, and admin analytics.
 
 For implementation details and route wiring, see the backend source under `backend/src/routes` and `backend/src/controllers`.

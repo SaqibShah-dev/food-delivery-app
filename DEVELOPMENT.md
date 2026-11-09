@@ -231,9 +231,13 @@ backend/
 │   │   ├── auth.validator.ts
 │   │   ├── food.validator.ts
 │   │   └── order.validator.ts
-│   └── tests/
-├── uploads/
+│   └── scripts/
+│       └── seed.ts
+├── test/                   # unit and integration tests
+├── uploads/                # legacy local images
 ├── .env
+├── .env.example
+├── Dockerfile
 ├── package.json
 ├── tsconfig.json
 └── dist/
@@ -249,11 +253,11 @@ frontend/
 │   ├── App.css
 │   ├── index.css
 │   ├── assets/
+│   ├── api/                # typed API clients
 │   ├── components/
 │   ├── context/
 │   ├── hooks/
 │   ├── pages/
-│   ├── services/
 │   ├── types/
 │   └── utils/
 ├── public/
@@ -264,6 +268,8 @@ frontend/
 ├── tsconfig.node.json
 ├── eslint.config.js
 ├── index.html
+├── nginx.conf
+├── Dockerfile
 └── dist/
 ```
 

@@ -6,6 +6,8 @@ A modern full-stack food ordering platform built with React, Vite, TypeScript, E
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-20.19%2B%20or%2022.12%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_or_Local-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Tests](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![CI](https://github.com/SaqibShah-dev/food-delivery-app/actions/workflows/ci.yml/badge.svg)](https://github.com/SaqibShah-dev/food-delivery-app/actions/workflows/ci.yml)
 
 ## Overview
 
@@ -17,14 +19,15 @@ This project is designed to demonstrate a complete customer journey for a food d
 
 - User registration and login with JWT authentication
 - Role-based authorization for customer and admin flows
-- Public food catalog browsing
-- Admin food management (create, update, delete)
-- Image upload support for menu items
+- Public food catalog browsing with search, category filtering, and pagination
+- Admin food management (create, update, soft delete, restore)
+- Image upload support for menu items (stored in Cloudinary)
 - Cart-driven order creation and order history
-- Admin order management and status updates
-- Stripe checkout session initiation for payment flow integration
-- Responsive frontend built with React and Vite
-- Structured backend API with TypeScript and Express
+- Admin order management with enforced status transitions
+- Stripe Checkout with webhook-based payment confirmation, plus cash on delivery
+- Admin analytics (dashboard stats, popular items, revenue by category)
+- Docker Compose setup with MongoDB, API, and Nginx-served frontend
+- Comprehensive Vitest test suites for backend and frontend
 
 ## Tech Stack
 
@@ -89,11 +92,15 @@ food-delivery-app/
 ├── DEVELOPMENT.md
 ├── LICENSE
 ├── README.md
+├── compose.yaml            # Docker Compose: MongoDB + API + frontend
+├── .github/workflows/ci.yml
 ├── backend/
-│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── uploads/
+│   ├── uploads/            # legacy local images (new uploads go to Cloudinary)
+│   ├── test/               # unit and integration tests
 │   └── src/
 │       ├── app.ts
 │       ├── server.ts
@@ -102,20 +109,39 @@ food-delivery-app/
 │       ├── middleware/
 │       ├── models/
 │       ├── routes/
+│       ├── scripts/        # seed script
 │       ├── services/
 │       ├── types/
 │       ├── utils/
-│       ├── validators/
-│       └── tests/
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   ├── index.html
-│   ├── public/
-│   └── src/
-└── LICENSE
+│       └── validators/
+└── frontend/
+    ├── Dockerfile
+    ├── nginx.conf
+    ├── package.json
+    ├── vite.config.ts
+    ├── tsconfig.json
+    ├── index.html
+    ├── public/
+    └── src/
+        ├── api/            # typed API clients
+        ├── components/
+        ├── context/
+        ├── hooks/
+        ├── pages/
+        ├── types/
+        └── utils/
 ```
+
+## Quick Start with Docker
+
+If you prefer not to set up MongoDB locally, run the whole stack with Docker Compose:
+
+```bash
+cp backend/.env.example backend/.env   # then fill in real values
+docker compose up --build
+```
+
+This starts MongoDB, the API (http://localhost:5001/api), and an Nginx-served frontend (http://localhost:5174). Ports can be overridden with `FRONTEND_HOST_PORT` and `API_HOST_PORT`. See [DEVELOPMENT.md](DEVELOPMENT.md#run-with-docker-compose) for details.
 
 ## Prerequisites
 
@@ -138,21 +164,31 @@ cd food-delivery-app
 
 ### 2. Configure backend environment
 
-Create a `.env` file inside the `backend/` directory:
+The easiest way to configure the backend is to copy the provided example and fill in your values:
 
-```env
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://localhost:27017/food-delivery-app
-JWT_SECRET=replace_with_a_long_random_value
-JWT_EXPIRES_IN=7d
-STRIPE_SECRET_KEY=sk_test_replace_with_your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=whsec_replace_with_your_webhook_signing_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-CLIENT_URL=http://localhost:5173
+```bash
+cp backend/.env.example backend/.env
 ```
+
+Required variables:
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | API port (default `5000`) |
+| `NODE_ENV` | `development` or `production` |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Signing secret for JWTs (minimum 32 characters) |
+| `JWT_EXPIRES_IN` | Token lifetime (default `7d`) |
+| `CLIENT_URL` | Frontend origin, used for CORS (default `http://localhost:5173`) |
+| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_...` in test mode) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_...`) |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Optional: credentials used by `npm run seed` |
+| `API_RATE_LIMIT_*`, `AUTH_RATE_LIMIT_*` | Optional: request throttling tuning |
+
+All values are validated at startup by `backend/src/config/env.ts`; the process exits with a clear error if anything required is missing or malformed.
 
 Replace the Stripe placeholders with your test-mode credentials. Set the Cloudinary cloud name, API key, and API secret from your Cloudinary dashboard; image uploads are stored there and served from their secure URLs. See [DEVELOPMENT.md](DEVELOPMENT.md) for Stripe CLI setup, Cloudinary configuration, and troubleshooting.
 
@@ -227,25 +263,33 @@ The backend exposes a REST API under `/api` with the following core routes:
 Authentication
 - POST /api/auth/register
 - POST /api/auth/login
+- GET  /api/auth/me
 
 Food Catalog
-- GET /api/food
-- GET /api/food/admin/all (admin only)
-- POST /api/food (admin only)
-- PATCH /api/food/:id (admin only)
-- DELETE /api/food/:id (admin only)
+- GET    /api/food
+- GET    /api/food/categories
+- GET    /api/food/admin/all (admin only)
+- POST   /api/food (admin only)
+- PATCH  /api/food/:id (admin only)
+- PATCH  /api/food/:id/restore (admin only)
+- DELETE /api/food/:id (admin only, soft delete)
 
 Orders
-- POST /api/orders
-- GET /api/orders/my
-- GET /api/orders (admin only)
-- PATCH /api/orders/:id/status (admin only)
+- POST   /api/orders
+- GET    /api/orders/my
+- GET    /api/orders/:id
+- GET    /api/orders (admin only)
+- PATCH  /api/orders/:id/status (admin only)
+- PATCH  /api/orders/:id/confirm-cod-payment (admin only)
+- GET    /api/orders/admin/stats (admin only)
+- GET    /api/orders/admin/popular-food (admin only)
+- GET    /api/orders/admin/revenue-by-category (admin only)
 
 Payments
 - POST /api/payment/create-checkout-session
+- POST /api/payment/confirm-checkout-session
+- POST /api/payment/webhook (Stripe callback, unauthenticated)
 ```
-
-For full endpoint definitions, request payloads, and response examples, see [API.md](API.md).
 
 ## Security and Validation
 
@@ -256,7 +300,10 @@ The project includes important application safeguards:
 - Admin-only route checks for privileged actions
 - Environment variable validation at startup
 - Request validation using Zod
-- Upload handling for food item images
+- Rate limiting on the API and auth endpoints
+- Security headers via `helmet` and CORS restricted to `CLIENT_URL`
+- Upload handling with type and size restrictions (JPEG/PNG/WebP, max 5 MB)
+- Webhook signature verification for Stripe callbacks
 
 ## Current Scope
 
@@ -276,10 +323,10 @@ It does not yet include full production-scale marketplace features such as real-
 
 Additional project documentation is available here:
 
-- [API.md](API.md)
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [DEVELOPMENT.md](DEVELOPMENT.md)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [API.md](API.md) — full REST API reference with request/response examples
+- [ARCHITECTURE.md](ARCHITECTURE.md) — system design and data models
+- [DEVELOPMENT.md](DEVELOPMENT.md) — setup, Docker, seeding, Stripe, and troubleshooting
+- [CONTRIBUTING.md](CONTRIBUTING.md) — coding standards and PR guidelines
 
 ## Contributing
 
