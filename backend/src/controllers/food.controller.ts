@@ -9,39 +9,72 @@ import {
   uploadImage,
 } from "../config/cloudinary.js";
 
-export const getAll = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const pageValue = Number(req.query.page);
-  const limitValue = Number(req.query.limit);
+const FOOD_MENU_SORT_OPTIONS = [
+  "newest",
+  "price-asc",
+  "price-desc",
+  "name-asc",
+  "name-desc",
+] as const;
 
-  const page = Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1;
+type FoodMenuSort = (typeof FOOD_MENU_SORT_OPTIONS)[number];
 
-  const limit =
-    Number.isInteger(limitValue) && limitValue > 0
-      ? Math.min(limitValue, 50)
-      : 10;
+function parseFoodMenuSort(value: unknown): FoodMenuSort {
+  return FOOD_MENU_SORT_OPTIONS.includes(value as FoodMenuSort)
+    ? (value as FoodMenuSort)
+    : "newest";
+}
 
-  const category =
-    typeof req.query.category === "string"
-      ? req.query.category.trim()
-      : undefined;
+export const getAll = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const pageValue = Number(req.query.page);
+    const limitValue = Number(req.query.limit);
 
-  const search =
-    typeof req.query.search === "string" ? req.query.search.trim() : undefined;
+    const page =
+      Number.isInteger(pageValue) && pageValue > 0
+        ? pageValue
+        : 1;
 
-  const result = await foodService.getAllAvailable({
-    page,
-    limit,
-    category: category || undefined,
-    search: search || undefined,
-  });
+    const limit =
+      Number.isInteger(limitValue) && limitValue > 0
+        ? Math.min(limitValue, 50)
+        : 10;
 
-  res.json(apiResponse(result, "Available food items"));
-});
+    const category =
+      typeof req.query.category === "string"
+        ? req.query.category.trim()
+        : undefined;
+
+    const search =
+      typeof req.query.search === "string"
+        ? req.query.search.trim()
+        : undefined;
+
+    const sort = parseFoodMenuSort(req.query.sort);
+
+    const result = await foodService.getAllAvailable({
+      page,
+      limit,
+      category: category || undefined,
+      search: search || undefined,
+      sort,
+    });
+
+    res.json(apiResponse(result, "Available food items"));
+  },
+);
+
 export const getCategories = asyncHandler(
   async (_req: AuthRequest, res: Response) => {
-    const categories = await foodService.getAvailableCategories();
+    const categories =
+      await foodService.getAvailableCategories();
 
-    res.json(apiResponse(categories, "Available food categories"));
+    res.json(
+      apiResponse(
+        categories,
+        "Available food categories",
+      ),
+    );
   },
 );
 
@@ -49,97 +82,128 @@ export const getAllForAdmin = asyncHandler(
   async (_req: AuthRequest, res: Response) => {
     const items = await foodService.getAllForAdmin();
 
-    res.json(apiResponse(items, "All food items for admin"));
+    res.json(
+      apiResponse(items, "All food items for admin"),
+    );
   },
 );
 
-export const create = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { name, description, price, category } = req.body as {
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-  };
+export const create = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { name, description, price, category } =
+      req.body as {
+        name: string;
+        description: string;
+        price: number;
+        category: string;
+      };
 
-  const uploadedImage = await uploadImage(req.file!.buffer);
+    const uploadedImage = await uploadImage(
+      req.file!.buffer,
+    );
 
-  let item;
-  try {
-    item = await foodService.create({
-      name,
-      description,
-      price,
-      category,
-      image: uploadedImage.secure_url,
-      isAvailable: true,
-    });
-  } catch (error) {
-    await deleteUploadedImage(uploadedImage.public_id);
-    throw error;
-  }
+    let item;
 
-  res.status(201).json(apiResponse(item, "Food item created", 201));
-});
-
-export const update = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-
-  if (typeof id !== "string" || !id.trim()) {
-    const err: any = new Error("A valid food item ID is required");
-    err.status = 400;
-    throw err;
-  }
-
-  const updateData = req.body as Partial<IFoodItem>;
-
-  const uploadedImage = req.file
-    ? await uploadImage(req.file.buffer)
-    : undefined;
-
-  if (uploadedImage) {
-    updateData.image = uploadedImage.secure_url;
-  }
-
-  let item;
-  try {
-    item = await foodService.updateById(id, updateData);
-  } catch (error) {
-    if (uploadedImage) {
+    try {
+      item = await foodService.create({
+        name,
+        description,
+        price,
+        category,
+        image: uploadedImage.secure_url,
+        isAvailable: true,
+      });
+    } catch (error) {
       await deleteUploadedImage(uploadedImage.public_id);
+      throw error;
     }
 
-    throw error;
-  }
+    res.status(201).json(
+      apiResponse(item, "Food item created", 201),
+    );
+  },
+);
 
-  res.json(apiResponse(item, "Food item updated"));
-});
+export const update = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== "string" || !id.trim()) {
+      const error = new Error(
+        "A valid food item ID is required",
+      ) as Error & { status?: number };
+
+      error.status = 400;
+      throw error;
+    }
+
+    const updateData = req.body as Partial<IFoodItem>;
+
+    const uploadedImage = req.file
+      ? await uploadImage(req.file.buffer)
+      : undefined;
+
+    if (uploadedImage) {
+      updateData.image = uploadedImage.secure_url;
+    }
+
+    let item;
+
+    try {
+      item = await foodService.updateById(id, updateData);
+    } catch (error) {
+      if (uploadedImage) {
+        await deleteUploadedImage(uploadedImage.public_id);
+      }
+
+      throw error;
+    }
+
+    res.json(apiResponse(item, "Food item updated"));
+  },
+);
 
 export const softDelete = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
     if (typeof id !== "string" || !id.trim()) {
-      const err: any = new Error("A valid food item ID is required");
-      err.status = 400;
-      throw err;
+      const error = new Error(
+        "A valid food item ID is required",
+      ) as Error & { status?: number };
+
+      error.status = 400;
+      throw error;
     }
 
     const item = await foodService.softDeleteById(id);
 
-    res.json(apiResponse(item, "Food item hidden from customers"));
+    res.json(
+      apiResponse(item, "Food item hidden from customers"),
+    );
   },
 );
 
-export const restore = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+export const restore = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
 
-  if (typeof id !== "string" || !id.trim()) {
-    const err: any = new Error("A valid food item ID is required");
-    err.status = 400;
-    throw err;
-  }
+    if (typeof id !== "string" || !id.trim()) {
+      const error = new Error(
+        "A valid food item ID is required",
+      ) as Error & { status?: number };
 
-  const item = await foodService.restoreById(id);
+      error.status = 400;
+      throw error;
+    }
 
-  res.json(apiResponse(item, "Food item restored and available"));
-});
+    const item = await foodService.restoreById(id);
+
+    res.json(
+      apiResponse(
+        item,
+        "Food item restored and available",
+      ),
+    );
+  },
+);

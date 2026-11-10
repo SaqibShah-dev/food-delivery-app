@@ -18,7 +18,7 @@ import {
   update,
   softDelete,
   restore,
-} from '../controllers/food.controller.js';
+} from "../controllers/food.controller.js";
 
 const router = express.Router();
 router.get('/', getAll);

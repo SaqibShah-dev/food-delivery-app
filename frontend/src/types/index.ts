@@ -122,16 +122,22 @@ export interface IRevenueCategory {
   totalQuantity: number;
   orderCount: number;
 }
+
 export interface IFoodItem {
   _id: string;
   name: string;
   description: string;
   price: number;
-  image: string;
   category: string;
+  image: string;
   isAvailable: boolean;
-  createdAt: string;
-  updatedAt: string;
+
+  ratingAverage?: number;
+  preparationMinutes?: number;
+  calories?: number;
+  isVegetarian?: boolean;
+  isSpicy?: boolean;
+  isPopular?: boolean;
 }
 
 export interface IFoodFormValues {
@@ -174,11 +180,19 @@ export interface IFoodMenuResponse {
   pagination: IPagination;
 }
 
+export type FoodMenuSort =
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "name-asc"
+  | "name-desc";
+
 export interface IFoodMenuFilters {
   page?: number;
   limit?: number;
   category?: string;
   search?: string;
+  sort?: FoodMenuSort;
 }
 
 export interface ICartItem {

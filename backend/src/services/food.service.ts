@@ -4,14 +4,31 @@ import { IFoodItem } from "../types/index.js";
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const FOOD_MENU_SORT_MAP = {
+  newest: { createdAt: -1 },
+  "price-asc": { price: 1 },
+  "price-desc": { price: -1 },
+  "name-asc": { name: 1 },
+  "name-desc": { name: -1 },
+} as const;
+
+type FoodMenuSort = keyof typeof FOOD_MENU_SORT_MAP;
+
 export const foodService = {
   async getAllAvailable(options: {
     page: number;
     limit: number;
     category?: string;
     search?: string;
+    sort?: FoodMenuSort;
   }) {
-    const { page, limit, category, search } = options;
+    const {
+      page,
+      limit,
+      category,
+      search,
+      sort = "newest",
+    } = options;
 
     const filter: Record<string, unknown> = {
       isAvailable: true,
@@ -31,10 +48,16 @@ export const foodService = {
       };
     }
 
+    const selectedSort =
+      FOOD_MENU_SORT_MAP[sort] ?? FOOD_MENU_SORT_MAP.newest;
+
     const skip = (page - 1) * limit;
 
     const [items, totalItems] = await Promise.all([
-      FoodItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      FoodItem.find(filter)
+        .sort(selectedSort)
+        .skip(skip)
+        .limit(limit),
 
       FoodItem.countDocuments(filter),
     ]);
@@ -53,13 +76,17 @@ export const foodService = {
       },
     };
   },
+
   async getAvailableCategories() {
     const categories = await FoodItem.distinct("category", {
       isAvailable: true,
     });
 
     return categories
-      .filter((category): category is string => typeof category === "string")
+      .filter(
+        (category): category is string =>
+          typeof category === "string",
+      )
       .map((category) => category.trim())
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b));
@@ -69,20 +96,32 @@ export const foodService = {
     return FoodItem.find().sort({ createdAt: -1 });
   },
 
-  async create(data: Omit<IFoodItem, "_id" | "createdAt" | "updatedAt">) {
+  async create(
+    data: Omit<
+      IFoodItem,
+      "_id" | "createdAt" | "updatedAt"
+    >,
+  ) {
     return FoodItem.create(data);
   },
 
   async updateById(id: string, data: Partial<IFoodItem>) {
-    const updated = await FoodItem.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
+    const updated = await FoodItem.findByIdAndUpdate(
+      id,
+      data,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
 
     if (!updated) {
-      const err: any = new Error("Food item not found");
-      err.status = 404;
-      throw err;
+      const error = new Error("Food item not found") as Error & {
+        status?: number;
+      };
+
+      error.status = 404;
+      throw error;
     }
 
     return updated;
@@ -99,9 +138,12 @@ export const foodService = {
     );
 
     if (!item) {
-      const err: any = new Error("Food item not found");
-      err.status = 404;
-      throw err;
+      const error = new Error("Food item not found") as Error & {
+        status?: number;
+      };
+
+      error.status = 404;
+      throw error;
     }
 
     return item;
@@ -118,9 +160,12 @@ export const foodService = {
     );
 
     if (!item) {
-      const err: any = new Error("Food item not found");
-      err.status = 404;
-      throw err;
+      const error = new Error("Food item not found") as Error & {
+        status?: number;
+      };
+
+      error.status = 404;
+      throw error;
     }
 
     return item;

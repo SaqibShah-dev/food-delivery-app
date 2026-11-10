@@ -15,8 +15,49 @@ const isAvailableSchema = z.preprocess(
   },
   z.boolean({
     error: 'isAvailable must be true or false',
-  })
+  }),
 );
+
+export const foodMenuSortSchema = z.enum([
+  'newest',
+  'price-asc',
+  'price-desc',
+  'name-asc',
+  'name-desc',
+]);
+
+export const foodMenuQuerySchema = z.object({
+  page: z.coerce
+    .number({
+      error: 'Page must be a number',
+    })
+    .int('Page must be an integer')
+    .min(1, 'Page must be at least 1')
+    .default(1),
+
+  limit: z.coerce
+    .number({
+      error: 'Limit must be a number',
+    })
+    .int('Limit must be an integer')
+    .min(1, 'Limit must be at least 1')
+    .max(50, 'Limit cannot exceed 50')
+    .default(9),
+
+  category: z
+    .string()
+    .trim()
+    .max(50, 'Category cannot exceed 50 characters')
+    .optional(),
+
+  search: z
+    .string()
+    .trim()
+    .max(100, 'Search cannot exceed 100 characters')
+    .optional(),
+
+  sort: foodMenuSortSchema.optional(),
+});
 
 export const createFoodSchema = z.object({
   name: z
@@ -71,8 +112,9 @@ export const updateFoodSchema = z
     (data) => Object.values(data).some((value) => value !== undefined),
     {
       message: 'Provide at least one field to update',
-    }
+    },
   );
 
+export type FoodMenuQueryInput = z.infer<typeof foodMenuQuerySchema>;
 export type CreateFoodInput = z.infer<typeof createFoodSchema>;
 export type UpdateFoodInput = z.infer<typeof updateFoodSchema>;
