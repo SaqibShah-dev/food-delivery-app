@@ -9,6 +9,7 @@ coverage
 *.tsbuildinfo
 
 # Tests and reports
+test
 tests
 test-results
 playwright-report

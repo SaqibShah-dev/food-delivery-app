@@ -59,6 +59,11 @@ app.get('/', (_req: Request, res: Response) => {
     message: 'Food Ordering API is running',
   });
 });
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+  });
+});
 
 // 404 handler: must be after every route
 app.use((_req: Request, res: Response) => {

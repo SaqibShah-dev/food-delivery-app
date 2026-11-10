@@ -1,13 +1,16 @@
 # syntax=docker/dockerfile:1
 
-# Build TypeScript
-FROM node:24-bookworm-slim AS build
+ARG NODE_VERSION=24-bookworm-slim
+
+# Compile TypeScript
+FROM node:${NODE_VERSION} AS build
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -16,18 +19,19 @@ RUN npm run build
 
 
 # Install production dependencies only
-FROM node:24-bookworm-slim AS production-dependencies
+FROM node:${NODE_VERSION} AS production-dependencies
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --omit=dev \
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev \
     && npm cache clean --force
 
 
-# Production runtime
-FROM node:24-bookworm-slim AS runtime
+# Minimal production runtime
+FROM node:${NODE_VERSION} AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=5000

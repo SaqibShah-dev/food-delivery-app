@@ -1,9 +1,13 @@
+name: foodflow
+
 services:
   mongodb:
     image: mongo:8
     restart: unless-stopped
     volumes:
       - mongodb-data:/data/db
+    networks:
+      - foodflow-network
     healthcheck:
       test:
         - CMD
@@ -15,10 +19,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -31,6 +41,8 @@ services:
       - "${API_HOST_PORT:-5001}:5000"
     volumes:
       - backend-uploads:/app/uploads
+    networks:
+      - foodflow-network
     depends_on:
       mongodb:
         condition: service_healthy
@@ -39,23 +51,52 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:5000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        - "fetch('http://127.0.0.1:5000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:${API_HOST_PORT:-5001}/api}
     restart: unless-stopped
     ports:
       - "${FRONTEND_HOST_PORT:-5174}:80"
+    networks:
+      - foodflow-network
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://127.0.0.1/health
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  foodflow-network:
+    driver: bridge
 
 volumes:
   mongodb-data:
