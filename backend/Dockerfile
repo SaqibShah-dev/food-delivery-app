@@ -9,8 +9,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+RUN npm ci --include=optional
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -25,8 +24,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev \
+RUN npm ci --omit=dev --include=optional \
     && npm cache clean --force
 
 
