@@ -1,0 +1,26 @@
+@"
+# dependencies
+node_modules/
+
+# environment files (never commit real secrets)
+.env
+.env.*
+!.env.example
+
+# build output
+dist/
+coverage/
+
+# uploads (user-generated files)
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/seed-*.svg
+
+# logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# tools
+gitleaks-report.json
+"@ | Set-Content .gitignore -Encoding utf8
