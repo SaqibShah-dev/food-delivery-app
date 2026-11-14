@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { SiteFooter, SiteHeader } from "../components/layout";
 import {
@@ -57,10 +57,6 @@ export default function Menu() {
   });
 
   const resultsRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, category, sort]);
 
   const changePage = useCallback((nextPage: number) => {
     setPage(nextPage);
