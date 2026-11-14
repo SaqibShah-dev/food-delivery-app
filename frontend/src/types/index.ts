@@ -132,6 +132,9 @@ export interface IFoodItem {
   image: string;
   isAvailable: boolean;
 
+  createdAt?: string;
+  updatedAt?: string;
+
   ratingAverage?: number;
   preparationMinutes?: number;
   calories?: number;
